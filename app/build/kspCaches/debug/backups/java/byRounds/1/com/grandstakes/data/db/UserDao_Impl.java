@@ -209,10 +209,139 @@ public final class UserDao_Impl implements UserDao {
   @Override
   public Object getUserByUsername(final String username,
       final Continuation<? super User> $completion) {
-    final String _sql = "SELECT * FROM users WHERE username = ? LIMIT 1";
+    final String _sql = "SELECT * FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindString(_argIndex, username);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<User>() {
+      @Override
+      @Nullable
+      public User call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfUsername = CursorUtil.getColumnIndexOrThrow(_cursor, "username");
+          final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
+          final int _cursorIndexOfEmail = CursorUtil.getColumnIndexOrThrow(_cursor, "email");
+          final int _cursorIndexOfPasswordHash = CursorUtil.getColumnIndexOrThrow(_cursor, "passwordHash");
+          final int _cursorIndexOfBalance = CursorUtil.getColumnIndexOrThrow(_cursor, "balance");
+          final int _cursorIndexOfIsVip = CursorUtil.getColumnIndexOrThrow(_cursor, "isVip");
+          final int _cursorIndexOfJackpotAlerts = CursorUtil.getColumnIndexOrThrow(_cursor, "jackpotAlerts");
+          final int _cursorIndexOfTableOpenings = CursorUtil.getColumnIndexOrThrow(_cursor, "tableOpenings");
+          final int _cursorIndexOfMarketingEditorial = CursorUtil.getColumnIndexOrThrow(_cursor, "marketingEditorial");
+          final User _result;
+          if (_cursor.moveToFirst()) {
+            final String _tmpUsername;
+            _tmpUsername = _cursor.getString(_cursorIndexOfUsername);
+            final String _tmpName;
+            _tmpName = _cursor.getString(_cursorIndexOfName);
+            final String _tmpEmail;
+            _tmpEmail = _cursor.getString(_cursorIndexOfEmail);
+            final String _tmpPasswordHash;
+            _tmpPasswordHash = _cursor.getString(_cursorIndexOfPasswordHash);
+            final int _tmpBalance;
+            _tmpBalance = _cursor.getInt(_cursorIndexOfBalance);
+            final boolean _tmpIsVip;
+            final int _tmp;
+            _tmp = _cursor.getInt(_cursorIndexOfIsVip);
+            _tmpIsVip = _tmp != 0;
+            final boolean _tmpJackpotAlerts;
+            final int _tmp_1;
+            _tmp_1 = _cursor.getInt(_cursorIndexOfJackpotAlerts);
+            _tmpJackpotAlerts = _tmp_1 != 0;
+            final boolean _tmpTableOpenings;
+            final int _tmp_2;
+            _tmp_2 = _cursor.getInt(_cursorIndexOfTableOpenings);
+            _tmpTableOpenings = _tmp_2 != 0;
+            final boolean _tmpMarketingEditorial;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfMarketingEditorial);
+            _tmpMarketingEditorial = _tmp_3 != 0;
+            _result = new User(_tmpUsername,_tmpName,_tmpEmail,_tmpPasswordHash,_tmpBalance,_tmpIsVip,_tmpJackpotAlerts,_tmpTableOpenings,_tmpMarketingEditorial);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getUserByIdentity(final String identity,
+      final Continuation<? super User> $completion) {
+    final String _sql = "SELECT * FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?) LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, identity);
+    _argIndex = 2;
+    _statement.bindString(_argIndex, identity);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<User>() {
+      @Override
+      @Nullable
+      public User call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfUsername = CursorUtil.getColumnIndexOrThrow(_cursor, "username");
+          final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
+          final int _cursorIndexOfEmail = CursorUtil.getColumnIndexOrThrow(_cursor, "email");
+          final int _cursorIndexOfPasswordHash = CursorUtil.getColumnIndexOrThrow(_cursor, "passwordHash");
+          final int _cursorIndexOfBalance = CursorUtil.getColumnIndexOrThrow(_cursor, "balance");
+          final int _cursorIndexOfIsVip = CursorUtil.getColumnIndexOrThrow(_cursor, "isVip");
+          final int _cursorIndexOfJackpotAlerts = CursorUtil.getColumnIndexOrThrow(_cursor, "jackpotAlerts");
+          final int _cursorIndexOfTableOpenings = CursorUtil.getColumnIndexOrThrow(_cursor, "tableOpenings");
+          final int _cursorIndexOfMarketingEditorial = CursorUtil.getColumnIndexOrThrow(_cursor, "marketingEditorial");
+          final User _result;
+          if (_cursor.moveToFirst()) {
+            final String _tmpUsername;
+            _tmpUsername = _cursor.getString(_cursorIndexOfUsername);
+            final String _tmpName;
+            _tmpName = _cursor.getString(_cursorIndexOfName);
+            final String _tmpEmail;
+            _tmpEmail = _cursor.getString(_cursorIndexOfEmail);
+            final String _tmpPasswordHash;
+            _tmpPasswordHash = _cursor.getString(_cursorIndexOfPasswordHash);
+            final int _tmpBalance;
+            _tmpBalance = _cursor.getInt(_cursorIndexOfBalance);
+            final boolean _tmpIsVip;
+            final int _tmp;
+            _tmp = _cursor.getInt(_cursorIndexOfIsVip);
+            _tmpIsVip = _tmp != 0;
+            final boolean _tmpJackpotAlerts;
+            final int _tmp_1;
+            _tmp_1 = _cursor.getInt(_cursorIndexOfJackpotAlerts);
+            _tmpJackpotAlerts = _tmp_1 != 0;
+            final boolean _tmpTableOpenings;
+            final int _tmp_2;
+            _tmp_2 = _cursor.getInt(_cursorIndexOfTableOpenings);
+            _tmpTableOpenings = _tmp_2 != 0;
+            final boolean _tmpMarketingEditorial;
+            final int _tmp_3;
+            _tmp_3 = _cursor.getInt(_cursorIndexOfMarketingEditorial);
+            _tmpMarketingEditorial = _tmp_3 != 0;
+            _result = new User(_tmpUsername,_tmpName,_tmpEmail,_tmpPasswordHash,_tmpBalance,_tmpIsVip,_tmpJackpotAlerts,_tmpTableOpenings,_tmpMarketingEditorial);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getUserByEmail(final String email, final Continuation<? super User> $completion) {
+    final String _sql = "SELECT * FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, email);
     final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
     return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<User>() {
       @Override

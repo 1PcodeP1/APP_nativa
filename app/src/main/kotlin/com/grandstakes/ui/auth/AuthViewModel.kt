@@ -3,6 +3,7 @@ package com.grandstakes.ui.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.grandstakes.data.repository.AuthRepository
+import com.grandstakes.data.repository.RegisterResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,7 +27,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            if (repository.login(username, psw)) {
+            if (repository.login(username.trim(), psw)) {
                 onSelection()
             } else {
                 _error.value = "Invalid credentials. Please try again."
@@ -39,10 +40,15 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            if (repository.register(username, name, email, psw)) {
-                onSelection()
-            } else {
-                _error.value = "Registration failed. Username may be taken."
+            
+            val trimmedUsername = username.trim()
+            val trimmedEmail = email.trim()
+            
+            when (val result = repository.register(trimmedUsername, name, trimmedEmail, psw)) {
+                RegisterResult.Success -> onSelection()
+                RegisterResult.UsernameTaken -> _error.value = "This identity (username) is already taken."
+                RegisterResult.EmailTaken -> _error.value = "This email address is already in use."
+                RegisterResult.Error -> _error.value = "An error occurred during registration. Please try again."
             }
             _isLoading.value = false
         }

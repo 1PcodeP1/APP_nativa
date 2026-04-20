@@ -31,9 +31,9 @@ fun RegisterScreen(
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var dob by remember { mutableStateOf("") }
     
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -81,6 +81,17 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 GrandStakesTextField(
+                    value = username,
+                    onValueChange = { 
+                        username = it
+                    },
+                    label = "CHOSEN IDENTITY (USERNAME)",
+                    placeholder = "E.g. jvane_77"
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                GrandStakesTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = "EMAIL ADDRESS",
@@ -93,15 +104,17 @@ fun RegisterScreen(
                     value = password,
                     onValueChange = { password = it },
                     label = "SECURITY PASSWORD",
-                    placeholder = "••••••••"
+                    placeholder = "••••••••",
+                    isPassword = true,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
                 )
                 
                 Spacer(modifier = Modifier.height(48.dp))
                 
                 GrandStakesButton(
                     text = if (isLoading) "PROCESSING..." else "JOIN THE ELITE",
-                    onClick = { viewModel.register(email, name, email, password, onRegisterSuccess) },
-                    enabled = !isLoading && email.isNotEmpty() && password.isNotEmpty(),
+                    onClick = { viewModel.register(username, name, email, password, onRegisterSuccess) },
+                    enabled = !isLoading && username.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

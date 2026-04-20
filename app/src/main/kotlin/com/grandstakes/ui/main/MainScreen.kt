@@ -65,6 +65,11 @@ fun MainScreen(
             }
             composable("ledger") { TransactionsScreen(onNavigateBack = { navController.popBackStack() }) }
             composable("config") { ConfigScreen(onLogout = onLogout) }
+            composable("tables") { 
+                TablesScreen(
+                    onNavigateToGame = { route -> navController.navigate(route) }
+                )
+            }
             
             // Slots Listing
             composable("slots_list") { 
@@ -100,7 +105,7 @@ fun shouldShowTopBar(route: String?): Boolean {
 
 fun shouldShowBottomBar(route: String?): Boolean {
     // Show bottom bar on primary screens
-    return route in listOf("lobby", "ledger", "config", "slots_list")
+    return route in listOf("lobby", "ledger", "config", "slots_list", "tables")
 }
 
 fun getTitleForRoute(route: String?): String {
@@ -110,6 +115,7 @@ fun getTitleForRoute(route: String?): String {
         route == "baccarat" -> "BACCARAT"
         route == "ledger" -> "BANKING"
         route == "config" -> "SETTINGS"
+        route == "tables" -> "TABLE GAMES"
         route == "slots_list" -> "SLOT MACHINES"
         route?.startsWith("slot_game") == true -> "SLOTS"
         else -> "GRAND STAKES"

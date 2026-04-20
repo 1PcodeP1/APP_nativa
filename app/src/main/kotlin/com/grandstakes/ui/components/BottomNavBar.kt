@@ -34,8 +34,8 @@ fun GrandStakesBottomNavBar(
             label = "LOBBY"
         )
         BottomNavItem(
-            selected = currentRoute == "roulette" || currentRoute == "blackjack" || currentRoute == "baccarat",
-            onClick = { onNavigate("lobby") }, // Navigate to lobby then user can pick or we can add a 'Tables' route
+            selected = currentRoute == "tables" || currentRoute == "roulette" || currentRoute == "blackjack" || currentRoute == "baccarat",
+            onClick = { onNavigate("tables") },
             icon = Icons.Default.Casino,
             label = "TABLES"
         )

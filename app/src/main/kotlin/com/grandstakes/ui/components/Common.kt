@@ -25,6 +25,11 @@ import androidx.compose.ui.unit.sp
 import com.grandstakes.ui.theme.GoldPrimary
 import com.grandstakes.ui.theme.DarkSurfaceContainer
 import com.grandstakes.ui.theme.OnSurfaceVariant
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,7 +133,11 @@ fun GrandStakesTextField(
     label: String,
     modifier: Modifier = Modifier,
     placeholder: String = "",
-    leadingIcon: @Composable (() -> Unit)? = null
+    leadingIcon: @Composable (() -> Unit)? = null,
+    isPassword: Boolean = false,
+    singleLine: Boolean = true,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Next
 ) {
     Column(modifier = modifier) {
         Text(
@@ -145,6 +154,12 @@ fun GrandStakesTextField(
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
             leadingIcon = leadingIcon,
+            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = if (isPassword) KeyboardType.Password else keyboardType,
+                imeAction = imeAction
+            ),
+            singleLine = singleLine,
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = DarkSurfaceContainer,
                 unfocusedContainerColor = DarkSurfaceContainer,

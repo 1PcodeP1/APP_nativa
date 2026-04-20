@@ -15,6 +15,7 @@ drawable eye_of_ra_slot
 drawable ic_launcher_background
 drawable ic_launcher_foreground
 drawable lobby_hero
+drawable logo
 drawable nebula_gems_slot
 drawable roulette_cover
 drawable royal_cherry_slot

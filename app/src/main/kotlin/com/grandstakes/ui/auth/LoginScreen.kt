@@ -98,7 +98,7 @@ fun LoginScreen(
                     value = username,
                     onValueChange = { username = it },
                     label = "IDENTITY",
-                    placeholder = "Username or Email"
+                    placeholder = "Username or Email Address"
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -107,7 +107,9 @@ fun LoginScreen(
                     value = password,
                     onValueChange = { password = it },
                     label = "CREDENTIAL",
-                    placeholder = "••••••••"
+                    placeholder = "••••••••",
+                    isPassword = true,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
                 )
                 
                 Spacer(modifier = Modifier.height(48.dp))

@@ -14,7 +14,8 @@ enum class Rank(val label: String) {
 
 data class PlayingCard(
     val suit: Suit,
-    val rank: Rank
+    val rank: Rank,
+    val id: Int = 0 // Unique ID for Compose keying
 ) {
     val blackjackValue: Int
         get() = when (rank) {
@@ -41,10 +42,11 @@ class Deck {
     fun reset() {
         cards.clear()
         // Standard 6-deck shoe like in the original Flutter app
+        var nextId = 1
         repeat(6) {
             Suit.entries.forEach { suit ->
                 Rank.entries.forEach { rank ->
-                    cards.add(PlayingCard(suit, rank))
+                    cards.add(PlayingCard(suit, rank, nextId++))
                 }
             }
         }

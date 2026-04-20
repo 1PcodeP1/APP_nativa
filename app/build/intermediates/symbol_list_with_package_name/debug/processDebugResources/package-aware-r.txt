@@ -2969,6 +2969,7 @@ drawable ic_mtrl_chip_close_circle
 drawable ic_search_black_24
 drawable indeterminate_static
 drawable lobby_hero
+drawable logo
 drawable m3_avd_hide_password
 drawable m3_avd_show_password
 drawable m3_bottom_sheet_drag_handle

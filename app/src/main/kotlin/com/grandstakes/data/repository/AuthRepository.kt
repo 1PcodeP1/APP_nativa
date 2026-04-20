@@ -8,6 +8,13 @@ import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
+sealed class RegisterResult {
+    object Success : RegisterResult()
+    object UsernameTaken : RegisterResult()
+    object EmailTaken : RegisterResult()
+    object Error : RegisterResult()
+}
+
 @Singleton
 class AuthRepository @Inject constructor(
     private val userDao: UserDao
@@ -15,8 +22,8 @@ class AuthRepository @Inject constructor(
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser = _currentUser.asStateFlow()
 
-    suspend fun login(username: String, password: String): Boolean {
-        val user = userDao.getUserByUsername(username)
+    suspend fun login(identity: String, password: String): Boolean {
+        val user = userDao.getUserByIdentity(identity)
         return if (user != null && user.passwordHash == password) {
             _currentUser.value = user
             true
@@ -25,12 +32,18 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun register(username: String, name: String, email: String, password: String): Boolean {
-        if (userDao.getUserByUsername(username) != null) return false
-        val newUser = User(username = username, name = name, email = email, passwordHash = password)
-        userDao.insertUser(newUser)
-        _currentUser.value = newUser
-        return true
+    suspend fun register(username: String, name: String, email: String, password: String): RegisterResult {
+        if (userDao.getUserByUsername(username) != null) return RegisterResult.UsernameTaken
+        if (userDao.getUserByEmail(email) != null) return RegisterResult.EmailTaken
+        
+        return try {
+            val newUser = User(username = username, name = name, email = email, passwordHash = password)
+            userDao.insertUser(newUser)
+            _currentUser.value = newUser
+            RegisterResult.Success
+        } catch (e: Exception) {
+            RegisterResult.Error
+        }
     }
 
     fun logout() {

@@ -81,7 +81,7 @@ fun LobbyScreen(
                     title = "Blackjack & Poker",
                     subtitle = "Table Limits: $500 - $50,000",
                     imageRes = R.drawable.blackjack_cover,
-                    onTap = { onNavigateToGame("blackjack") }
+                    onTap = { onNavigateToGame("tables") }
                 )
                 Spacer(Modifier.height(16.dp))
                 PitFloorItem(
