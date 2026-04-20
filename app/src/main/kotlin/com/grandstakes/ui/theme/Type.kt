@@ -16,48 +16,61 @@ private val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-private val NotoSerif = FontFamily(
-    Font(googleFont = GoogleFont("Noto Serif"), fontProvider = provider),
-    Font(googleFont = GoogleFont("Noto Serif"), fontProvider = provider, style = FontStyle.Italic, weight = FontWeight.Normal)
+private val DMSerifDisplay = FontFamily(
+    Font(googleFont = GoogleFont("DM Serif Display"), fontProvider = provider),
+    Font(googleFont = GoogleFont("DM Serif Display"), fontProvider = provider, style = FontStyle.Italic, weight = FontWeight.Normal)
 )
 
 private val Manrope = FontFamily(
     Font(googleFont = GoogleFont("Manrope"), fontProvider = provider),
     Font(googleFont = GoogleFont("Manrope"), fontProvider = provider, weight = FontWeight.Bold),
-    Font(googleFont = GoogleFont("Manrope"), fontProvider = provider, weight = FontWeight.Light)
+    Font(googleFont = GoogleFont("Manrope"), fontProvider = provider, weight = FontWeight.Light),
+    Font(googleFont = GoogleFont("Manrope"), fontProvider = provider, weight = FontWeight.Medium)
 )
 
 val GrandStakesTypography = Typography(
     displayLarge = TextStyle(
-        fontFamily = NotoSerif,
-        fontWeight = FontWeight.Light,
-        fontSize = 48.sp,
-        letterSpacing = (-0.5).sp,
-        lineHeight = 56.sp
+        fontFamily = DMSerifDisplay,
+        fontWeight = FontWeight.Normal,
+        fontSize = 56.sp,
+        letterSpacing = (-0.25).sp,
+        color = OnSurface
+    ),
+    headlineLarge = TextStyle(
+        fontFamily = DMSerifDisplay,
+        fontWeight = FontWeight.Normal,
+        fontSize = 32.sp,
+        color = OnSurface
     ),
     headlineMedium = TextStyle(
-        fontFamily = NotoSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
-        letterSpacing = 0.sp
+        fontFamily = DMSerifDisplay,
+        fontWeight = FontWeight.Normal,
+        fontSize = 28.sp,
+        color = OnSurface
     ),
     titleLarge = TextStyle(
         fontFamily = Manrope,
         fontWeight = FontWeight.Bold,
-        fontSize = 20.sp,
-        letterSpacing = 0.15.sp
+        fontSize = 22.sp,
+        color = OnSurface
     ),
     titleMedium = TextStyle(
         fontFamily = Manrope,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        letterSpacing = 0.15.sp
+        fontWeight = FontWeight.Medium,
+        fontSize = 18.sp,
+        color = OnSurface
     ),
     bodyLarge = TextStyle(
         fontFamily = Manrope,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        letterSpacing = 0.5.sp
+        color = OnSurface
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = Manrope,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        color = OnSurface
     ),
     labelSmall = TextStyle(
         fontFamily = Manrope,

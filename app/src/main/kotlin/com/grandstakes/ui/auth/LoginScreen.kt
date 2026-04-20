@@ -1,5 +1,6 @@
 package com.grandstakes.ui.auth
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -20,6 +21,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.grandstakes.ui.components.GrandStakesButton
 import com.grandstakes.ui.components.GrandStakesTextField
 import com.grandstakes.ui.theme.GoldPrimary
+import com.grandstakes.ui.theme.OnSurfaceVariant
+import com.grandstakes.ui.theme.PinkSecondary
 
 @Composable
 fun LoginScreen(
@@ -43,85 +46,95 @@ fun LoginScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(64.dp))
             
             Text(
                 "GRAND STAKES",
                 style = MaterialTheme.typography.displayLarge.copy(
-                    fontStyle = FontStyle.Italic,
                     color = GoldPrimary,
-                    letterSpacing = 2.sp
+                    letterSpacing = 6.sp,
+                    fontSize = 32.sp
                 ),
                 textAlign = TextAlign.Center
             )
             
             Text(
-                "THE HIGH-ROLLER'S PRIVATE ATELIER",
+                "THE PRIVATE ATELIER",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    letterSpacing = 4.sp
+                    color = OnSurfaceVariant,
+                    letterSpacing = 4.sp,
+                    fontSize = 10.sp
                 ),
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(64.dp))
             
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-                shadowElevation = 8.dp
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                horizontalAlignment = Alignment.Start
             ) {
-                Column(
-                    modifier = Modifier.padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "Welcome Back",
-                        style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
-                    error?.let {
-                        Text(it, color = MaterialTheme.colorScheme.secondary, textAlign = TextAlign.Center)
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                    
-                    GrandStakesTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = "IDENTITY",
-                        placeholder = "Username or Email",
-                        leadingIcon = { Icon(Icons.Outlined.AlternateEmail, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    GrandStakesTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = "CREDENTIAL",
-                        placeholder = "••••••••",
-                        leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
-                    GrandStakesButton(
-                        text = if (isLoading) "VERIFYING..." else "ENTER THE ATELIER",
-                        onClick = { viewModel.login(username, password, onLoginSuccess) },
-                        enabled = !isLoading
-                    )
+                Text(
+                    "Welcome Back",
+                    style = MaterialTheme.typography.headlineLarge.copy(color = Color.White),
+                    textAlign = TextAlign.Start
+                )
+                Text(
+                    "Authorize your entry into the circle.",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = OnSurfaceVariant),
+                    textAlign = TextAlign.Start
+                )
+                
+                Spacer(modifier = Modifier.height(48.dp))
+                
+                error?.let {
+                    Text(it, color = PinkSecondary, style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Not a member of the circle? ", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                TextButton(onClick = onNavigateToRegister) {
-                    Text("Request Invitation", color = GoldPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                
+                GrandStakesTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = "IDENTITY",
+                    placeholder = "Username or Email"
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                GrandStakesTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = "CREDENTIAL",
+                    placeholder = "••••••••"
+                )
+                
+                Spacer(modifier = Modifier.height(48.dp))
+                
+                GrandStakesButton(
+                    text = if (isLoading) "VERIFYING..." else "ENTER THE ATELIER",
+                    onClick = { viewModel.login(username, password, onLoginSuccess) },
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Not a member of the circle? ", color = OnSurfaceVariant, fontSize = 12.sp)
+                    Text(
+                        "REQUEST INVITATION", 
+                        modifier = Modifier.clickable(onClick = onNavigateToRegister),
+                        color = GoldPrimary, 
+                        fontWeight = FontWeight.ExtraBold, 
+                        fontSize = 12.sp,
+                        letterSpacing = 1.sp
+                    )
                 }
             }
         }

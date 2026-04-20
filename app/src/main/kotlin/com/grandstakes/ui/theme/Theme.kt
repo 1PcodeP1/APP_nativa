@@ -1,7 +1,7 @@
 package com.grandstakes.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -12,16 +12,22 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = GoldPrimary,
-    secondary = RedSecondary,
-    tertiary = OnSurfaceVariant,
-    background = DarkSurface,
-    surface = DarkSurface,
-    onPrimary = DarkSurface,
-    onSecondary = OnSurface,
+    onPrimary = OnGoldPrimary,
+    primaryContainer = DarkSurfaceContainer,
+    onPrimaryContainer = GoldPrimary,
+    secondary = PinkSecondary,
+    onSecondary = OnGoldPrimary,
+    secondaryContainer = FeltRedPrimary,
+    onSecondaryContainer = Color.White,
+    background = DarkSurfaceContainerLowest,
     onBackground = OnSurface,
+    surface = DarkSurface,
     onSurface = OnSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = OnSurfaceVariant
+    surfaceVariant = DarkSurfaceContainer,
+    onSurfaceVariant = OnSurfaceVariant,
+    outline = Outline,
+    outlineVariant = OutlineVariant,
+    tertiary = PurpleTertiary
 )
 
 @Composable
@@ -33,8 +39,8 @@ fun GrandStakesTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = DarkSurface.toArgb()
-            window.navigationBarColor = BottomNavBackground.toArgb()
+            window.statusBarColor = DarkSurfaceContainerLowest.toArgb()
+            window.navigationBarColor = DarkSurfaceContainerLowest.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }

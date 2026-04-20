@@ -22,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.grandstakes.ui.components.GrandStakesButton
 import com.grandstakes.ui.components.GrandStakesTextField
 import com.grandstakes.ui.theme.GoldPrimary
+import com.grandstakes.ui.theme.PinkSecondary
 
 @Composable
 fun RegisterScreen(
@@ -48,71 +49,61 @@ fun RegisterScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = GoldPrimary)
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
             Text(
                 "EXCLUSIVITY AWAITS",
-                style = MaterialTheme.typography.labelSmall.copy(color = GoldPrimary, letterSpacing = 2.sp)
+                style = MaterialTheme.typography.labelSmall.copy(color = GoldPrimary, letterSpacing = 4.sp)
             )
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text("Enter the", style = MaterialTheme.typography.displayLarge.copy(color = Color.White))
             Text(
-                "Private Atelier",
-                style = MaterialTheme.typography.displayLarge.copy(
-                    color = GoldPrimary,
-                    fontStyle = FontStyle.Italic
-                )
+                text = "Request your Invitation",
+                style = MaterialTheme.typography.displayLarge.copy(color = Color.White, fontSize = 48.sp, lineHeight = 52.sp)
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(48.dp))
             
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
-            ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    error?.let {
-                        Text(it, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(bottom = 16.dp))
-                    }
-                    
-                    GrandStakesTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = "FULL LEGAL NAME",
-                        placeholder = "E.g. James Vane",
-                        leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null) }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    GrandStakesTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = "EMAIL ADDRESS",
-                        placeholder = "james@vane.com",
-                        leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null) }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    GrandStakesTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = "SECURITY PASSWORD",
-                        placeholder = "••••••••",
-                        leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(48.dp))
-                    
-                    GrandStakesButton(
-                        text = if (isLoading) "PROCESSING..." else "JOIN THE ELITE",
-                        onClick = { viewModel.register(email, name, email, password, onRegisterSuccess) },
-                        enabled = !isLoading && email.isNotEmpty() && password.isNotEmpty()
-                    )
+            Column {
+                error?.let {
+                    Text(it, color = PinkSecondary, style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
+                
+                GrandStakesTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "FULL LEGAL NAME",
+                    placeholder = "E.g. James Vane"
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                GrandStakesTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = "EMAIL ADDRESS",
+                    placeholder = "james@vane.com"
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                GrandStakesTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = "SECURITY PASSWORD",
+                    placeholder = "••••••••"
+                )
+                
+                Spacer(modifier = Modifier.height(48.dp))
+                
+                GrandStakesButton(
+                    text = if (isLoading) "PROCESSING..." else "JOIN THE ELITE",
+                    onClick = { viewModel.register(email, name, email, password, onRegisterSuccess) },
+                    enabled = !isLoading && email.isNotEmpty() && password.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

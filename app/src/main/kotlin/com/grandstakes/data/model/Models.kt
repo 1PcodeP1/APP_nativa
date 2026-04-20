@@ -16,6 +16,7 @@ data class User(
     val marketingEditorial: Boolean = true
 )
 
+
 @Entity(tableName = "transactions")
 data class Transaction(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -23,4 +24,11 @@ data class Transaction(
     val game: String,
     val amount: Int,
     val timestamp: Long = System.currentTimeMillis()
+)
+
+data class SlotTheme(
+    val title: String,
+    val symbols: List<String>,
+    val primaryColorHex: Long,
+    val imageRes: Int? = null
 )

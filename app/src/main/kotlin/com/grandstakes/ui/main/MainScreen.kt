@@ -1,88 +1,117 @@
 package com.grandstakes.ui.main
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Casino
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavHostController
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.grandstakes.ui.games.*
-import com.grandstakes.ui.theme.GoldPrimary
-
-sealed class Screen(val route: String, val icon: ImageVector, val label: String) {
-    object Lobby : Screen("lobby", Icons.Default.Home, "Lobby")
-    object Tables : Screen("tables", Icons.Default.Casino, "Tables")
-    object Ledger : Screen("ledger", Icons.Default.List, "Ledger")
-    object Config : Screen("config", Icons.Default.Settings, "Config")
-}
+import com.grandstakes.ui.components.GrandStakesAppBar
+import com.grandstakes.ui.components.GrandStakesBottomNavBar
 
 @Composable
 fun MainScreen(
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    viewModel: LobbyViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val user by viewModel.currentUser.collectAsState()
 
     Scaffold(
+        topBar = {
+            if (shouldShowTopBar(currentRoute)) {
+                GrandStakesAppBar(
+                    balance = user?.balance ?: 0,
+                    onNavigateToConfig = { navController.navigate("config") },
+                    onNavigateToBanking = { navController.navigate("ledger") },
+                    onLogout = onLogout,
+                    title = getTitleForRoute(currentRoute)
+                )
+            }
+        },
         bottomBar = {
             if (shouldShowBottomBar(currentRoute)) {
-                NavigationBar(containerColor = Color(0xFF0D0D0D)) {
-                    val items = listOf(Screen.Lobby, Screen.Tables, Screen.Ledger, Screen.Config)
-                    items.forEach { screen ->
-                        NavigationBarItem(
-                            icon = { Icon(screen.icon, contentDescription = null) },
-                            label = { Text(screen.label) },
-                            selected = currentRoute == screen.route,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.startDestinationId)
-                                    launchSingleTop = true
-                                }
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = GoldPrimary,
-                                unselectedIconColor = Color.Gray,
-                                selectedTextColor = GoldPrimary,
-                                indicatorColor = Color.Transparent
-                            )
-                        )
+                GrandStakesBottomNavBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo("lobby") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
-                }
+                )
             }
         }
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Lobby.route,
+            startDestination = "lobby",
             modifier = Modifier.padding(padding)
         ) {
-            composable(Screen.Lobby.route) { LobbyScreen(onNavigateToGame = { navController.navigate(it) }) }
-            composable(Screen.Ledger.route) { TransactionsScreen(onNavigateBack = { navController.popBackStack() }) }
-            composable(Screen.Config.route) { ConfigScreen(onLogout = onLogout) }
+            composable("lobby") { 
+                LobbyScreen(
+                    onNavigateToGame = { route -> 
+                        if (route == "slots") navController.navigate("slots_list")
+                        else navController.navigate(route)
+                    }
+                ) 
+            }
+            composable("ledger") { TransactionsScreen(onNavigateBack = { navController.popBackStack() }) }
+            composable("config") { ConfigScreen(onLogout = onLogout) }
             
+            // Slots Listing
+            composable("slots_list") { 
+                SlotsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onPlaySlot = { theme ->
+                        // We will update SlotGameScreen to accept these parameters or use a Shared ViewModel
+                        navController.navigate("slot_game/${theme.title}")
+                    }
+                ) 
+            }
+
             // Game Routes
             composable("roulette") { RouletteScreen(onNavigateBack = { navController.popBackStack() }) }
             composable("blackjack") { BlackjackScreen(onNavigateBack = { navController.popBackStack() }) }
-            composable("slots") { SlotGameScreen(
-                slotTheme = SlotTheme("Grand Pit", listOf("💰", "💎", "7️⃣", "🔔", "🌟"), GoldPrimary),
-                onNavigateBack = { navController.popBackStack() }
-            ) }
+            composable("slot_game/{themeTitle}") { backStackEntry ->
+                val themeTitle = backStackEntry.arguments?.getString("themeTitle") ?: "Grand Pit"
+                // Resolve theme logic here or in ViewModel
+                SlotGameScreen(
+                    themeTitle = themeTitle,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
             composable("baccarat") { BaccaratScreen(onNavigateBack = { navController.popBackStack() }) }
         }
     }
 }
 
+fun shouldShowTopBar(route: String?): Boolean {
+    // Show top bar on primary screens and non-minimized game views
+    return route != null
+}
+
 fun shouldShowBottomBar(route: String?): Boolean {
-    return route in listOf(Screen.Lobby.route, Screen.Ledger.route, Screen.Config.route)
+    // Show bottom bar on primary screens
+    return route in listOf("lobby", "ledger", "config", "slots_list")
+}
+
+fun getTitleForRoute(route: String?): String {
+    return when {
+        route == "blackjack" -> "BLACKJACK"
+        route == "roulette" -> "ROULETTE"
+        route == "baccarat" -> "BACCARAT"
+        route == "ledger" -> "BANKING"
+        route == "config" -> "SETTINGS"
+        route == "slots_list" -> "SLOT MACHINES"
+        route?.startsWith("slot_game") == true -> "SLOTS"
+        else -> "GRAND STAKES"
+    }
 }

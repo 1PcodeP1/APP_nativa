@@ -3,9 +3,8 @@ package com.grandstakes.data.repository
 import com.grandstakes.data.db.UserDao
 import com.grandstakes.data.model.Transaction
 import com.grandstakes.data.model.User
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -55,8 +54,11 @@ class AuthRepository @Inject constructor(
         _currentUser.value = updatedUser
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun getTransactions(): Flow<List<Transaction>> {
-        return _currentUser.value?.let { userDao.getTransactions(it.username) } 
-            ?: kotlinx.coroutines.flow.flowOf(emptyList())
+        return _currentUser.flatMapLatest { user ->
+            if (user == null) flowOf(emptyList())
+            else userDao.getTransactions(user.username)
+        }
     }
 }
