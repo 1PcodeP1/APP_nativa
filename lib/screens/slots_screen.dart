@@ -1,7 +1,10 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../db/auth_service.dart';
+import 'slot_game_screen.dart';
+import 'config_screen.dart';
+import 'auth/login_screen.dart';
+import 'transactions_screen.dart';
 
 class SlotsScreen extends StatefulWidget {
   const SlotsScreen({Key? key}) : super(key: key);
@@ -10,238 +13,279 @@ class SlotsScreen extends StatefulWidget {
   State<SlotsScreen> createState() => _SlotsScreenState();
 }
 
-class _SlotsScreenState extends State<SlotsScreen>
-    with SingleTickerProviderStateMixin {
+class _SlotsScreenState extends State<SlotsScreen> {
   int _balance = 0;
-  String _message = "SPIN TO WIN";
-  bool _spinning = false;
-  int _bet = 10;
-
-  final List<String> _symbols = ["🍒", "💎", "7️⃣", "🔔", "💰"];
-  List<String> _currentReels = ["7️⃣", "7️⃣", "7️⃣"];
-
-  late AnimationController _ctrl;
 
   @override
   void initState() {
     super.initState();
     _balance = AuthService.currentBalance;
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _spin() async {
-    if (_balance < _bet || _spinning) return;
-    AuthService.updateBalance(-_bet, gameName: 'Golden Slots');
-    setState(() {
-      _spinning = true;
-      _balance = AuthService.currentBalance;
-      _message = "SPINNING...";
-    });
-
-    _ctrl.repeat();
-
-    // Simulate spin logic
-    for (int i = 0; i < 15; i++) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      setState(() {
-        _currentReels = [
-          _symbols[Random().nextInt(_symbols.length)],
-          _symbols[Random().nextInt(_symbols.length)],
-          _symbols[Random().nextInt(_symbols.length)],
-        ];
-      });
-    }
-
-    _ctrl.stop();
-    _checkWin();
-  }
-
-  void _checkWin() {
-    if (_currentReels[0] == _currentReels[1] &&
-        _currentReels[1] == _currentReels[2]) {
-      int mult = 10;
-      if (_currentReels[0] == "7️⃣") mult = 100;
-      if (_currentReels[0] == "💰") mult = 50;
-      AuthService.updateBalance(_bet * mult, gameName: 'Golden Slots Win');
-      setState(() {
-        _message = "JACKPOT! WON \$${_bet * mult}";
-      });
-    } else if (_currentReels[0] == _currentReels[1] ||
-        _currentReels[1] == _currentReels[2] ||
-        _currentReels[0] == _currentReels[2]) {
-      AuthService.updateBalance(_bet * 2, gameName: 'Golden Slots Win');
-      setState(() {
-        _message = "MINI WIN! WON \$${_bet * 2}";
-      });
-    } else {
-      setState(() {
-        _message = "NOTHING.";
-      });
-    }
-    setState(() {
-      _spinning = false;
-      _balance = AuthService.currentBalance;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Colors.black, // Darkest background
       appBar: AppBar(
-        title: Text(
-          "Golden Slots",
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: AppColors.primary),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Text(
-                "\$$_balance",
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(color: AppColors.primary),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            _message,
-            style: Theme.of(
-              context,
-            ).textTheme.displayLarge?.copyWith(color: AppColors.primary),
-          ),
-          const SizedBox(height: 48),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  AppColors.surfaceContainerLowest,
-                  AppColors.surfaceContainerHighest,
-                ],
-              ),
-              border: const Border(
-                top: BorderSide(color: AppColors.primary, width: 4),
-                bottom: BorderSide(color: AppColors.primary, width: 4),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildReel(_currentReels[0]),
-                _buildReel(_currentReels[1]),
-                _buildReel(_currentReels[2]),
-              ],
-            ),
-          ),
-          const SizedBox(height: 48),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.account_circle, color: AppColors.primary, size: 32),
+          onPressed: () => Navigator.pushNamed(context, '/profile'),
+        ),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.remove_circle,
-                  color: AppColors.primary,
-                  size: 32,
+              Text("GRAND STAKES", style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary, fontStyle: FontStyle.italic, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.5))),
                 ),
-                onPressed: _spinning || _bet <= 10
-                    ? null
-                    : () {
-                        setState(() {
-                          _bet -= 10;
-                        });
-                      },
+                child: Text("\$$_balance", style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary)),
+              )
+            ],
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.menu, color: AppColors.primary),
+            color: AppColors.surfaceContainerHigh,
+            onSelected: (value) {
+              if (value == 'profile') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfigScreen()));
+              } else if (value == 'banking') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const TransactionsScreen()));
+              } else if (value == 'logout') {
+                AuthService.logout();
+                Navigator.pushReplacementNamed(context, '/');
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'profile',
+                child: Text('Profile & Settings', style: TextStyle(color: AppColors.primary)),
               ),
-              Text(
-                " BET \$$_bet ",
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.onSurface,
-                ),
+              const PopupMenuItem(
+                value: 'banking',
+                child: Text('Deposit / Cash Out', style: TextStyle(color: AppColors.primary)),
               ),
-              IconButton(
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: AppColors.primary,
-                  size: 32,
-                ),
-                onPressed: _spinning || _bet >= _balance
-                    ? null
-                    : () {
-                        setState(() {
-                          _bet += 10;
-                        });
-                      },
+              const PopupMenuItem(
+                value: 'logout',
+                child: Text('Log Out', style: TextStyle(color: AppColors.secondary)),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          InkWell(
-            onTap: _spin,
-            child: Ink(
-              padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: _spinning
-                      ? [Colors.grey, Colors.grey.shade800]
-                      : [AppColors.primary, AppColors.primaryContainer],
-                ),
-              ),
-              child: Text(
-                "SPIN LOGIC",
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                  color: AppColors.surface,
-                  fontSize: 32,
-                ),
+        ],
+        iconTheme: const IconThemeData(color: AppColors.primary),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Banner
+            _buildTopBanner(),
+            const SizedBox(height: 32),
+
+            // Slot Games List
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  _buildSlotCard(
+                    title: "Eye of Ra",
+                    subtitle: "Discover ancient treasures hidden beneath the shifting sands of the desert.",
+                    buttonText: "PLAY NOW",
+                    buttonColor: AppColors.primary,
+                    textColor: Colors.black,
+                    imagePath: "assets/images/eye_of_ra_slot.png",
+                    theme: const SlotTheme(
+                      title: "Eye of Ra",
+                      symbols: ["👁️", "🐫", "🏺", "🦂", "🐍"],
+                      primaryColor: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSlotCard(
+                    title: "Royal Cherry",
+                    subtitle: "The ultimate classic experience refined for the modern player.",
+                    buttonText: "BET MAX",
+                    buttonColor: const Color(0xFF8B0000), // Red
+                    textColor: Colors.white,
+                    imagePath: "assets/images/royal_cherry_slot.png",
+                    theme: const SlotTheme(
+                      title: "Royal Cherry",
+                      symbols: ["🍒", "🔔", "7️⃣", "BAR", "🍉"],
+                      primaryColor: Color(0xFF8B0000),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSlotCard(
+                    title: "Nebula Gems",
+                    subtitle: "Drift through deep space while collecting cosmic wealth.",
+                    buttonText: "PLAY NOW",
+                    buttonColor: const Color(0xFF5C8DF6), // Blue
+                    textColor: Colors.black,
+                    imagePath: "assets/images/nebula_gems_slot.png",
+                    theme: const SlotTheme(
+                      title: "Nebula Gems",
+                      symbols: ["💎", "💠", "🌟", "☄️", "🚀"],
+                      primaryColor: Color(0xFF5C8DF6),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 48),
+
+            // VIP Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("THE VIP EXPERIENCE", style: TextStyle(color: AppColors.primary, fontSize: 10, letterSpacing: 2.0, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text("Exclusive Tables for the Discerning Bettor", style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 32, height: 1.1)),
+                  const SizedBox(height: 16),
+                  Text("Our private salon features premium limits and dedicated concierge service for those who demand excellence.", style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12, height: 1.5)),
+                  const SizedBox(height: 32),
+                  _buildSlotCard(
+                    title: "VIP Safe Work",
+                    subtitle: "Members Only",
+                    buttonText: "REQUEST ACCESS",
+                    buttonColor: Colors.black,
+                    textColor: AppColors.primary,
+                    hasBorder: true,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 48),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildReel(String icon) {
+  Widget _buildTopBanner() {
     return Container(
-      width: 80,
-      height: 100,
-      color: Colors.black,
-      alignment: Alignment.center,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 100),
-        transitionBuilder: (Widget child, Animation<double> animation) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, -1),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          );
-        },
-        child: Text(
-          icon, 
-          key: ValueKey<String>("$icon${DateTime.now().millisecondsSinceEpoch}"), 
-          style: const TextStyle(fontSize: 48)
+      height: 200,
+      decoration: BoxDecoration(
+        image: const DecorationImage(
+          image: AssetImage('assets/images/slots_cover.png'), // Placeholder
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(Colors.black54, BlendMode.darken),
         ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("GRAND CASINO", style: TextStyle(color: AppColors.primary, fontSize: 10, letterSpacing: 2.0, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text("\$1,420,000", style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 48, fontWeight: FontWeight.w300)),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SlotGameScreen(
+                theme: SlotTheme(
+                  title: "Grand Pit",
+                  symbols: ["💰", "💎", "7️⃣", "🔔", "🌟"],
+                  primaryColor: AppColors.primary,
+                )
+              ))),
+              child: Ink(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: const Text("ENTER THE PIT", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSlotCard({
+    required String title,
+    required String subtitle,
+    required String buttonText,
+    required Color buttonColor,
+    required Color textColor,
+    bool hasBorder = false,
+    String? imagePath,
+    SlotTheme? theme,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(8),
+        border: hasBorder ? Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1) : null,
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 150,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              gradient: imagePath == null ? const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppColors.surfaceVariant, Colors.black],
+              ) : null,
+            ),
+            child: imagePath != null
+                ? Image.asset(imagePath, fit: BoxFit.cover)
+                : const Center(
+                    child: Icon(Icons.casino, size: 64, color: Colors.white24),
+                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
+                const SizedBox(height: 8),
+                Text(subtitle, style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () {
+                    if (theme != null) {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => SlotGameScreen(theme: theme)));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("VIP Access Required.")));
+                    }
+                  },
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: buttonColor,
+                        borderRadius: BorderRadius.circular(2),
+                        border: hasBorder ? Border.all(color: AppColors.primary) : null,
+                      ),
+                      child: Center(
+                        child: Text(buttonText, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

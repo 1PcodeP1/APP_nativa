@@ -3,8 +3,7 @@ import '../theme.dart';
 import 'lobby_screen.dart';
 import 'roulette_screen.dart'; // Maybe replace with a generic tables screen later, for now Roulette
 import 'slots_screen.dart';
-import 'transactions_screen.dart';
-import 'config_screen.dart';
+import 'promos_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
@@ -18,10 +17,9 @@ class _MainLayoutState extends State<MainLayout> {
   
   final List<Widget> _screens = [
     const LobbyScreen(),
-    const RouletteScreen(), // Or a Tables menu
+    const RouletteScreen(), // TODO: Change to a generic Tables screen if needed
     const SlotsScreen(),
-    const TransactionsScreen(),
-    const ConfigScreen(),
+    const PromosScreen(),
   ];
 
   @override
@@ -62,14 +60,9 @@ class _MainLayoutState extends State<MainLayout> {
               label: 'SLOTS',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_outlined),
-              activeIcon: Icon(Icons.receipt_long),
-              label: 'RECORDS',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle_outlined),
-              activeIcon: Icon(Icons.account_circle),
-              label: 'PROFILE',
+              icon: Icon(Icons.emoji_events_outlined),
+              activeIcon: Icon(Icons.emoji_events),
+              label: 'PROMOS',
             ),
           ],
           selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),

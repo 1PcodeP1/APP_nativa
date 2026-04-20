@@ -11,17 +11,21 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _dobCtrl = TextEditingController();
   bool _isLoading = false;
   String? _error;
 
   void _register() async {
-    if (_usernameCtrl.text.isEmpty || _passwordCtrl.text.isEmpty || _nameCtrl.text.isEmpty) return;
+    if (_emailCtrl.text.isEmpty || _passwordCtrl.text.isEmpty || _nameCtrl.text.isEmpty || _dobCtrl.text.isEmpty) {
+      setState(() { _error = "Please complete all fields to proceed."; });
+      return;
+    }
     setState(() { _isLoading = true; _error = null; });
-    final success = await AuthService.register(_usernameCtrl.text.trim(), _passwordCtrl.text, _nameCtrl.text.trim(), _emailCtrl.text.trim());
+    // We use the email as the username for backend registration
+    final success = await AuthService.register(_emailCtrl.text.trim(), _passwordCtrl.text, _nameCtrl.text.trim(), _emailCtrl.text.trim());
     if (!mounted) return;
     if (success) {
       Navigator.pushAndRemoveUntil(
@@ -30,7 +34,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
         (route) => false,
       );
     } else {
-      setState(() { _isLoading = false; _error = "Username already implicitly verified. Please choose another."; });
+      setState(() { _isLoading = false; _error = "Registration failed. Email might already be in use."; });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // default to 18 years ago
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primary,
+              onPrimary: Colors.black,
+              surface: AppColors.surfaceContainerHigh,
+              onSurface: AppColors.onSurface,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _dobCtrl.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+      });
     }
   }
 
@@ -125,7 +156,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 24),
 
                     _buildFieldLabel("DATE OF BIRTH"),
-                    _buildInputField(controller: TextEditingController(), hint: "DD/MM/YYYY", icon: Icons.calendar_today_outlined, isPassword: false),
+                    _buildInputField(
+                      controller: _dobCtrl, 
+                      hint: "DD/MM/YYYY", 
+                      icon: Icons.calendar_today_outlined, 
+                      isPassword: false,
+                      readOnly: true,
+                      onTap: () => _selectDate(context),
+                    ),
                     const SizedBox(height: 24),
 
                     _buildFieldLabel("EMAIL ADDRESS"),
@@ -288,7 +326,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildInputField({required TextEditingController controller, required String hint, required IconData icon, required bool isPassword}) {
+  Widget _buildInputField({
+    required TextEditingController controller, 
+    required String hint, 
+    required IconData icon, 
+    required bool isPassword,
+    bool readOnly = false,
+    VoidCallback? onTap,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -297,6 +342,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: TextField(
         controller: controller,
         obscureText: isPassword && _obscureText,
+        readOnly: readOnly,
+        onTap: onTap,
         style: const TextStyle(color: AppColors.onSurface),
         decoration: InputDecoration(
           hintText: hint,

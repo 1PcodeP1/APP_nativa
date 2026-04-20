@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../logic/card_deck.dart';
 import '../db/auth_service.dart';
+import 'config_screen.dart';
+import 'auth/login_screen.dart';
+import 'transactions_screen.dart';
 
 class BaccaratScreen extends StatefulWidget {
   const BaccaratScreen({Key? key}) : super(key: key);
@@ -98,21 +101,40 @@ class _BaccaratScreenState extends State<BaccaratScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("Baccarat", style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(width: 16),
-            Container( 
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.primary.withOpacity(0.5))),
-              ),
-              child: Text("\$$_balance", style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary)),
-            )
-          ],
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            children: [
+              Text("\$$_balance", style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+              const Text("AVAILABLE BALANCE", style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 8, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
         centerTitle: true,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.menu, color: AppColors.primary),
+            color: AppColors.surfaceContainerHigh,
+            onSelected: (value) {
+              if (value == 'profile') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfigScreen()));
+              } else if (value == 'logout') {
+                AuthService.logout();
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'profile',
+                child: Text('Profile & Settings', style: TextStyle(color: AppColors.primary)),
+              ),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Text('Log Out', style: TextStyle(color: AppColors.secondary)),
+              ),
+            ],
+          ),
+        ],
         iconTheme: const IconThemeData(color: AppColors.primary),
       ),
       body: SafeArea(
@@ -222,25 +244,28 @@ class _BetZone extends StatelessWidget {
         color: baseColor.withOpacity(0.8), // No radii (0px corner constraint)
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                  fontSize: 48,
-                  color: effectiveTextColor,
+          padding: const EdgeInsets.all(8),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                    fontSize: 48,
+                    color: effectiveTextColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                payout,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: effectiveTextColor.withOpacity(0.7),
+                const SizedBox(height: 8),
+                Text(
+                  payout,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: effectiveTextColor.withOpacity(0.7),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

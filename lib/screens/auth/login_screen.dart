@@ -18,7 +18,10 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
 
   void _login() async {
-    if (_usernameCtrl.text.isEmpty || _passwordCtrl.text.isEmpty) return;
+    if (_usernameCtrl.text.isEmpty || _passwordCtrl.text.isEmpty) {
+      setState(() { _error = "Please enter your credentials to continue."; });
+      return;
+    }
     setState(() { _isLoading = true; _error = null; });
     final success = await AuthService.login(_usernameCtrl.text.trim(), _passwordCtrl.text);
     if (!mounted) return;

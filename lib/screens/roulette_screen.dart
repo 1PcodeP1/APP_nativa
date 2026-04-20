@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../theme.dart';
 import '../db/auth_service.dart';
+import 'config_screen.dart';
+import 'auth/login_screen.dart';
+import 'transactions_screen.dart';
 
 // Standard European Roulette Sequence
 const List<int> rouletteSequence = [
@@ -167,35 +170,41 @@ class _RouletteScreenState extends State<RouletteScreen> with SingleTickerProvid
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceContainerLowest,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: AppColors.primary),
-          onPressed: () { /* Menu */ },
-        ),
-        title: Text(
-          "GRAND STAKES",
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppColors.primary,
-            fontStyle: FontStyle.italic,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            children: [
+              Text("\$$_balance", style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+              const Text("AVAILABLE BALANCE", style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 8, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+            ],
           ),
         ),
-        centerTitle: false,
+        centerTitle: true,
         actions: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.primary.withOpacity(0.5)),
-                borderRadius: BorderRadius.circular(2),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.menu, color: AppColors.primary),
+            color: AppColors.surfaceContainerHigh,
+            onSelected: (value) {
+              if (value == 'profile') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfigScreen()));
+              } else if (value == 'logout') {
+                AuthService.logout();
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'profile',
+                child: Text('Profile & Settings', style: TextStyle(color: AppColors.primary)),
               ),
-              child: Text(
-                "\$$_balance",
-                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Text('Log Out', style: TextStyle(color: AppColors.secondary)),
               ),
-            ),
-          )
+            ],
+          ),
         ],
       ),
       body: Column(
@@ -251,12 +260,15 @@ class _RouletteScreenState extends State<RouletteScreen> with SingleTickerProvid
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHistory(),
-                  _buildBettingGrid(),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHistory(),
+                    _buildBettingGrid(),
+                  ],
+                ),
               ),
             ),
           ),

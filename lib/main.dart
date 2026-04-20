@@ -19,7 +19,7 @@ class GrandStakesApp extends StatelessWidget {
       title: 'Grand Stakes',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
-      home: const MainLayout(), // Bypassing login for testing
+      home: AuthService.isLoggedIn ? const MainLayout() : const LoginScreen(),
     );
   }
 }

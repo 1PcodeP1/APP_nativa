@@ -22,15 +22,33 @@ class AuthService {
       'isVip': false,
       'balance': 5000, 
       'transactions': [], // Complete list of transactions
+      'settings': {
+        'jackpotAlerts': true,
+        'tableOpenings': false,
+        'marketingEditorial': true,
+      }
     });
     await _session.put('currentUser', username);
     return true;
   }
 
-  static Future<bool> login(String username, String password) async {
-    final userData = _users.get(username);
+  static Future<bool> login(String identifier, String password) async {
+    dynamic userData = _users.get(identifier);
+    String usernameKey = identifier;
+
+    if (userData == null) {
+      for (var key in _users.keys) {
+        final userMap = _users.get(key);
+        if (userMap != null && userMap['email'] == identifier) {
+          userData = userMap;
+          usernameKey = key;
+          break;
+        }
+      }
+    }
+
     if (userData != null && userData['password'] == password) {
-      await _session.put('currentUser', username);
+      await _session.put('currentUser', usernameKey);
       return true;
     }
     return false;
@@ -43,6 +61,36 @@ class AuthService {
   static bool get isLoggedIn => _session.containsKey('currentUser');
 
   static String? get currentUser => _session.get('currentUser') as String?;
+
+  static Map<dynamic, dynamic>? getUserData() {
+    final user = currentUser;
+    if (user == null) return null;
+    return _users.get(user);
+  }
+
+  static Future<void> updateUserSettings(Map<String, dynamic> newSettings) async {
+    final user = currentUser;
+    if (user != null) {
+      final userData = Map<String, dynamic>.from(_users.get(user) ?? {});
+      if (userData.isNotEmpty) {
+        final currentSettings = Map<String, dynamic>.from(userData['settings'] ?? {});
+        currentSettings.addAll(newSettings);
+        userData['settings'] = currentSettings;
+        await _users.put(user, userData);
+      }
+    }
+  }
+
+  static Future<void> updateUserName(String newName) async {
+    final user = currentUser;
+    if (user != null) {
+      final userData = Map<String, dynamic>.from(_users.get(user) ?? {});
+      if (userData.isNotEmpty) {
+        userData['name'] = newName;
+        await _users.put(user, userData);
+      }
+    }
+  }
 
   static int get currentBalance {
     final user = currentUser;
