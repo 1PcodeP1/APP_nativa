@@ -11,18 +11,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Diamond
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.grandstakes.ui.components.GrandStakesButton
 import com.grandstakes.logic.Deck
 import com.grandstakes.logic.PlayingCard
 import com.grandstakes.ui.main.LobbyViewModel
+import com.grandstakes.ui.components.GrandStakesButton
 import com.grandstakes.ui.theme.GoldPrimary
+import com.grandstakes.ui.theme.FeltRedPrimary
+import com.grandstakes.ui.theme.FeltRedDark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -39,9 +43,11 @@ fun BaccaratScreen(
     
     var playerHand by remember { mutableStateOf(listOf<PlayingCard>()) }
     var bankerHand by remember { mutableStateOf(listOf<PlayingCard>()) }
-    var message by remember { mutableStateOf("Select a bet zone.")}
+    var message by remember { mutableStateOf("PLACE YOUR BET") }
     var isPlaying by remember { mutableStateOf(false) }
+    var isProcessing by remember { mutableStateOf(false) }
     var selectedBetType by remember { mutableStateOf<Int?>(null) }
+    var activeBet by remember { mutableIntStateOf(0) }
     val betAmount = 100
 
     fun calculateBaccarat(hand: List<PlayingCard>): Int {
@@ -49,18 +55,33 @@ fun BaccaratScreen(
     }
 
     fun play(betType: Int) { // 0: Banker, 1: Player, 2: Tie
-        if (isPlaying || balance < betAmount) return
-        
-        isPlaying = true
-        selectedBetType = betType
-        message = "Dealing..."
-        viewModel.updateBalance(-betAmount, "Baccarat Bet")
+        if (isProcessing || balance < betAmount) {
+            if (balance < betAmount) message = "INSUFFICIENT FUNDS"
+            return
+        }
         
         scope.launch {
+            isProcessing = true
+            isPlaying = true
+            selectedBetType = betType
+            activeBet = betAmount
+            message = "DEALING..."
+            viewModel.updateBalance(-betAmount, "Baccarat Bet")
+            
             deck.reset()
-            playerHand = listOf(deck.draw(), deck.draw())
-            bankerHand = listOf(deck.draw(), deck.draw())
-            delay(1000)
+            playerHand = emptyList()
+            bankerHand = emptyList()
+
+            // Initial Deal
+            delay(300)
+            playerHand = playerHand + deck.draw()
+            delay(400)
+            bankerHand = bankerHand + deck.draw()
+            delay(400)
+            playerHand = playerHand + deck.draw()
+            delay(400)
+            bankerHand = bankerHand + deck.draw()
+            delay(600)
             
             var pVal = calculateBaccarat(playerHand)
             var bVal = calculateBaccarat(bankerHand)
@@ -68,11 +89,13 @@ fun BaccaratScreen(
             // Third card logic
             if (pVal < 8 && bVal < 8) {
                 if (pVal <= 5) {
+                    message = "PLAYER DRAWS..."
                     playerHand = playerHand + deck.draw()
                     pVal = calculateBaccarat(playerHand)
                     delay(800)
                 }
                 if (bVal <= 5) {
+                    message = "BANKER DRAWS..."
                     bankerHand = bankerHand + deck.draw()
                     bVal = calculateBaccarat(bankerHand)
                     delay(800)
@@ -94,121 +117,131 @@ fun BaccaratScreen(
                 }
                 viewModel.updateBalance((betAmount * multiplier).toInt(), "Baccarat Win")
             } else {
-                message = "YOU LOST."
+                message = if (winner == 0) "BANKER WINS" else if (winner == 1) "PLAYER WINS" else "TIE GAME"
             }
+            
+            delay(2000)
+            isProcessing = false
             isPlaying = false
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0A0A))
-            .statusBarsPadding()
-            .navigationBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(FeltRedPrimary, FeltRedDark, Color.Black),
+                    radius = 3000f
+                )
+            )
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(
-            message.uppercase(), 
-            style = MaterialTheme.typography.labelSmall.copy(color = GoldPrimary, letterSpacing = 4.sp)
-        )
-        
-        Spacer(modifier = Modifier.weight(1f))
-        
-        // HUD
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ScoreColumn("BANKER", bankerHand, calculateBaccarat(bankerHand), Color(0xFFFF5252))
-            Box(modifier = Modifier.size(1.dp, 80.dp).background(GoldPrimary.copy(alpha = 0.1f)))
-            ScoreColumn("PLAYER", playerHand, calculateBaccarat(playerHand), GoldPrimary)
-        }
-        
-        Spacer(modifier = Modifier.weight(1f))
-        
-        // Betting Zones
-        Column(
-            modifier = Modifier
-                .padding(24.dp)
-                .fillMaxWidth()
-        ) {
-            BetZone("BANKER", "PAYS 0.95 TO 1", Color(0xFFFF5252), isPlaying) { play(0) }
-            Spacer(modifier = Modifier.height(16.dp))
-            BetZone("PLAYER", "PAYS 1 TO 1", GoldPrimary, isPlaying) { play(1) }
-            Spacer(modifier = Modifier.height(16.dp))
-            BetZone("TIE", "PAYS 8 TO 1", Color.White, isPlaying) { play(2) }
-        }
-        
-        Spacer(modifier = Modifier.height(48.dp))
-    }
-}
-
-@Composable
-fun ScoreColumn(title: String, hand: List<PlayingCard>, score: Int, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(title, style = MaterialTheme.typography.labelSmall.copy(color = color, letterSpacing = 2.sp))
-        Spacer(modifier = Modifier.height(8.dp))
-        AnimatedContent(
-            targetState = score,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
-            label = "score"
-        ) { targetScore ->
+        // Watermark
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                if (hand.isEmpty()) "0" else targetScore.toString(),
-                style = MaterialTheme.typography.displayLarge.copy(color = Color.White, fontSize = 72.sp)
+                "GRAND\nSTAKES",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.rotate(-15f).alpha(0.03f),
+                style = MaterialTheme.typography.displayLarge.copy(
+                    fontSize = 120.sp, color = Color.White, fontWeight = FontWeight.Black, lineHeight = 100.sp
+                )
             )
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onNavigateBack) {
+                    Text("← EXIT", color = GoldPrimary, fontWeight = FontWeight.Bold)
+                }
+                Surface(
+                    color = GoldPrimary.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, GoldPrimary.copy(alpha = 0.3f))
+                ) {
+                    Text(
+                        "ROYAL BACCARAT",
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(color = GoldPrimary, letterSpacing = 2.sp)
+                    )
+                }
+                Box(modifier = Modifier.size(40.dp))
+            }
+            
+            Spacer(modifier = Modifier.weight(0.8f))
+
+            // Banker Side
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("BANKER", style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFFFF5252), letterSpacing = 2.sp, fontWeight = FontWeight.Black))
+                Spacer(modifier = Modifier.height(12.dp))
+                BJHandView(hand = bankerHand)
+                Spacer(modifier = Modifier.height(12.dp))
+                if (bankerHand.isNotEmpty()) {
+                    ScoreBadge(score = calculateBaccarat(bankerHand).toString(), isDealer = true)
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Center message
+            Text(
+                message.uppercase(),
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    color = GoldPrimary, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp
+                ),
+                modifier = Modifier.height(48.dp)
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Player Side
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (playerHand.isNotEmpty()) {
+                    ScoreBadge(score = calculateBaccarat(playerHand).toString(), isDealer = false)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                BJHandView(hand = playerHand)
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("PLAYER", style = MaterialTheme.typography.labelSmall.copy(color = GoldPrimary, letterSpacing = 2.sp, fontWeight = FontWeight.Black))
+            }
+
+            Spacer(modifier = Modifier.weight(0.8f))
+
+            // Betting Zones (Obsidian Style)
+            Row(
+                modifier = Modifier.fillMaxWidth().height(100.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BaccaratBetZone("BANKER", "0.95:1", Color(0xFFFF5252), modifier = Modifier.weight(1f), disabled = isProcessing) { play(0) }
+                BaccaratBetZone("TIE", "8:1", Color.White, modifier = Modifier.weight(0.8f), disabled = isProcessing) { play(2) }
+                BaccaratBetZone("PLAYER", "1:1", GoldPrimary, modifier = Modifier.weight(1f), disabled = isProcessing) { play(1) }
+            }
         }
     }
 }
 
 @Composable
-fun BetZone(
-    title: String, 
-    payout: String, 
-    color: Color, 
-    disabled: Boolean,
-    onClick: () -> Unit
-) {
+fun BaccaratBetZone(title: String, payout: String, color: Color, modifier: Modifier, disabled: Boolean, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp)
-            .clickable(enabled = !disabled, onClick = onClick),
-        color = Color.Transparent,
-        border = BorderStroke(1.dp, color.copy(alpha = 0.5f)),
-        shape = RoundedCornerShape(0.dp)
+        modifier = modifier.fillMaxHeight().clickable(enabled = !disabled, onClick = onClick),
+        color = Color.Black.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(4.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.4f))
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column {
-                Text(
-                    title, 
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        color = color,
-                        letterSpacing = 2.sp
-                    )
-                )
-                Text(
-                    payout, 
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = Color.White.copy(alpha = 0.4f),
-                        fontSize = 9.sp,
-                        letterSpacing = 1.sp
-                    )
-                )
-            }
-            Icon(
-                Icons.Default.Diamond, 
-                contentDescription = null, 
-                tint = color.copy(alpha = 0.2f),
-                modifier = Modifier.size(24.dp)
-            )
+            Text(title, color = color, fontWeight = FontWeight.Black, fontSize = 14.sp, letterSpacing = 1.sp)
+            Text(payout, color = Color.White.copy(alpha = 0.3f), fontSize = 10.sp)
         }
     }
 }
