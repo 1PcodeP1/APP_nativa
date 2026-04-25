@@ -17,12 +17,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -32,6 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.grandstakes.ui.main.LobbyViewModel
 import com.grandstakes.ui.components.GrandStakesButton
 import com.grandstakes.ui.theme.GoldPrimary
+import com.grandstakes.ui.theme.DMSerifDisplay
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.*
@@ -75,29 +81,39 @@ fun RouletteScreen(
         if (isSpinning || placedBets.isEmpty()) return
         isSpinning = true
         winningNumber = null
+        
         val targetNumber = Random.nextInt(37)
         val winIndex = ROULETTE_SEQUENCE.indexOf(targetNumber)
         val segmentAngle = 360f / 37f
-        val targetRelativeAngle = winIndex * segmentAngle
-        val endWheelAngle = wheelAngle + (4 * 360f) + Random.nextFloat() * 360f
-        val normalizedTarget = (endWheelAngle + targetRelativeAngle) % 360f
-        val currentBallMod = ballAngle % 360f
-        var diff = normalizedTarget - currentBallMod
-        if (diff > 0) diff -= 360f
-        val endBallAngle = ballAngle + diff + (-5 * 360f)
+        
+        // Final state: segment at winIndex should be at the TOP (270 degrees)
+        // Let's keep wheelAngle as the rotation offset from the initial drawing.
+        // Initial drawing has segment 0 at 3 o'clock (0 degrees).
+        // To bring segment index 'i' to 270 degrees:
+        // finalWheelAngle + (i * segmentAngle) = 270
+        // finalWheelAngle = 270 - (i * segmentAngle)
+        
+        val targetWheelAngle = 270f - (winIndex * segmentAngle)
+        val endWheelAngle = targetWheelAngle + (5 * 360f) // 5 full rotations for drama
+        
+        // Ball lands at the TOP (270 degrees)
+        // Ball spins opposite to wheel for effect
+        val endBallAngle = 270f - (10 * 360f) // 10 rotations opposite direction
         
         coroutineScope {
             launch {
-                animate(wheelAngle, endWheelAngle, animationSpec = tween(4000, easing = EaseOutCubic)) { v, _ -> wheelAngle = v }
+                animate(wheelAngle % 360f, endWheelAngle, animationSpec = tween(5000, easing = EaseOutCubic)) { v, _ -> wheelAngle = v }
             }
             launch {
-                animate(ballAngle, endBallAngle, animationSpec = tween(4000, easing = EaseOutCubic)) { v, _ -> ballAngle = v }
+                animate(ballAngle % 360f, endBallAngle, animationSpec = tween(5000, easing = EaseOutCubic)) { v, _ -> ballAngle = v }
             }
             launch {
-                animate(1f, 0f, animationSpec = keyframes { durationMillis = 4000; 1f at 1200; 0f at 4000 }) { v, _ -> ballRadiusFactor = v }
+                // Ball starts outer, moves inner as it slows
+                animate(1f, 0f, animationSpec = keyframes { durationMillis = 5000; 1f at 1500; 0f at 5000 }) { v, _ -> ballRadiusFactor = v }
             }
         }
         
+        // Calculate wins...
         var totalWin = 0
         placedBets.forEach { (zone, amount) ->
             when {
@@ -171,7 +187,10 @@ fun RouletteScreen(
 
             // Wheel
             Box(
-                modifier = Modifier.fillMaxWidth().weight(1.2f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1.5f)
+                    .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
                 RouletteWheelView(wheelAngle, ballAngle, ballRadiusFactor)
@@ -260,62 +279,133 @@ fun RouletteScreen(
     }
 }
 
+
+
 @Composable
 fun RouletteWheelView(wheelAngle: Float, ballAngle: Float, ballRadiusFactor: Float) {
-    Canvas(modifier = Modifier.size(320.dp)) {
-        val center = Offset(size.width / 2, size.height / 2)
-        val radius = size.width / 2
-        
-        drawCircle(
-            brush = Brush.radialGradient(colors = listOf(Color(0xFF2A2A2A), Color(0xFF0A0A0A)), center = center, radius = radius),
-            radius = radius, center = center
-        )
-        drawCircle(GoldPrimary.copy(alpha = 0.4f), radius = radius * 0.94f, center = center, style = Stroke(width = 2.dp.toPx()))
-        drawCircle(Color(0xFF121212), radius = radius * 0.88f, center = center)
-        
-        rotate(wheelAngle, pivot = center) {
+    
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .aspectRatio(1f)
+            .shadow(32.dp, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        // 1. Static Outer Rim
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val center = Offset(size.width / 2, size.height / 2)
+            val fullRadius = min(size.width, size.height) / 2
+            
+            drawCircle(
+                brush = Brush.radialGradient(
+                    0.95f to Color(0xFF1A1A1A),
+                    1.0f to GoldPrimary,
+                    center = center,
+                    radius = fullRadius
+                ),
+                radius = fullRadius,
+                center = center
+            )
+            drawCircle(
+                color = Color.Black.copy(alpha = 0.6f),
+                radius = fullRadius * 0.98f,
+                center = center,
+                style = Stroke(width = 4.dp.toPx())
+            )
+        }
+
+        // 2. Spinning Wheel (Layered for GPU optimization)
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize(0.95f)
+                .graphicsLayer { rotationZ = wheelAngle }
+        ) {
+            val center = Offset(size.width / 2, size.height / 2)
+            val wheelRadius = size.width / 2
             val segmentSweep = 360f / 37f
+            
             ROULETTE_SEQUENCE.forEachIndexed { i, num ->
                 val start = i * segmentSweep - segmentSweep / 2
                 val color = when {
-                    num == 0 -> Color(0xFF008000)
-                    RED_NUMBERS.contains(num) -> Color(0xFFB71C1C)
+                    num == 0 -> Color(0xFF006400)
+                    RED_NUMBERS.contains(num) -> Color(0xFF8B0000)
                     else -> Color(0xFF0A0A0A)
                 }
+                
                 drawArc(
                     color = color,
                     startAngle = start,
                     sweepAngle = segmentSweep,
                     useCenter = true,
-                    topLeft = Offset(size.width * 0.06f, size.height * 0.06f),
-                    size = size * 0.88f
+                    topLeft = Offset.Zero,
+                    size = size
                 )
+                
                 drawArc(
-                    color = GoldPrimary.copy(alpha = 0.1f),
+                    color = GoldPrimary.copy(alpha = 0.25f),
                     startAngle = start,
-                    sweepAngle = 0.5f,
+                    sweepAngle = 0.8f,
                     useCenter = true,
-                    topLeft = Offset(size.width * 0.06f, size.height * 0.06f),
-                    size = size * 0.88f
+                    topLeft = Offset.Zero,
+                    size = size
                 )
+
             }
         }
-        
-        drawCircle(Color(0xFF1A1A1A), radius = radius * 0.55f, center = center)
-        drawCircle(GoldPrimary.copy(alpha = 0.2f), radius = radius * 0.53f, center = center, style = Stroke(width = 1.dp.toPx()))
-        drawCircle(
-            brush = Brush.radialGradient(colors = listOf(GoldPrimary, Color(0xFFAA8A25)), center = center, radius = radius * 0.15f),
-            radius = radius * 0.15f, center = center
-        )
-        
-        val outerDist = radius * 0.93f
-        val innerDist = radius * 0.82f
-        val ballDist = innerDist + (outerDist - innerDist) * ballRadiusFactor
-        val ballX = center.x + ballDist * cos(Math.toRadians(ballAngle.toDouble())).toFloat()
-        val ballY = center.y + ballDist * sin(Math.toRadians(ballAngle.toDouble())).toFloat()
-        
-        drawCircle(Color.White, radius = 5.dp.toPx(), center = Offset(ballX, ballY))
-        drawCircle(Color.White.copy(alpha = 0.3f), radius = 8.dp.toPx(), center = Offset(ballX, ballY), style = Stroke(width = 1.dp.toPx()))
+
+        // 3. Static Center Hub & Ball
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val center = Offset(size.width / 2, size.height / 2)
+            val wheelRadius = (min(size.width, size.height) / 2) * 0.95f
+            
+            // Center hub
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0xFF2A2A2A), Color(0xFF0A0A0A)),
+                    center = center,
+                    radius = wheelRadius * 0.6f
+                ),
+                radius = wheelRadius * 0.6f,
+                center = center
+            )
+            drawCircle(
+                color = GoldPrimary.copy(alpha = 0.3f),
+                radius = wheelRadius * 0.6f,
+                center = center,
+                style = Stroke(width = 1.dp.toPx())
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(GoldPrimary, Color(0xFFAA8A25)),
+                    center = center,
+                    radius = wheelRadius * 0.12f
+                ),
+                radius = wheelRadius * 0.12f,
+                center = center
+            )
+
+            // The Ball (Dynamic position - Unified coordinate system)
+            val outerDist = wheelRadius * 0.92f
+            val innerDist = wheelRadius * 0.65f
+            val ballDist = innerDist + (outerDist - innerDist) * ballRadiusFactor
+            val ballX = center.x + ballDist * cos(Math.toRadians(ballAngle.toDouble())).toFloat()
+            val ballY = center.y + ballDist * sin(Math.toRadians(ballAngle.toDouble())).toFloat()
+            
+            drawCircle(
+                color = Color.Black.copy(alpha = 0.5f),
+                radius = 7.dp.toPx(),
+                center = Offset(ballX + 2.dp.toPx(), ballY + 2.dp.toPx())
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color.White, Color(0xFFD0D0D0)),
+                    center = Offset(ballX - 1.dp.toPx(), ballY - 1.dp.toPx()),
+                    radius = 6.dp.toPx()
+                ),
+                radius = 6.dp.toPx(),
+                center = Offset(ballX, ballY)
+            )
+        }
     }
 }
 
@@ -354,14 +444,26 @@ fun BetZone(
     label: String, color: Color, width: androidx.compose.ui.unit.Dp = 50.dp, height: androidx.compose.ui.unit.Dp = 50.dp,
     isLabel: Boolean = false, betAmount: Int = 0, onClick: () -> Unit
 ) {
+    val scale by animateFloatAsState(if (betAmount > 0) 1.05f else 1f, label = "BetScale")
+    
     Box(
-        modifier = Modifier.size(width, height).background(if (color == Color.Transparent) Color(0xFF151515) else color)
-            .border(0.5.dp, GoldPrimary.copy(alpha = 0.15f)).clickable(onClick = onClick),
+        modifier = Modifier
+            .size(width, height)
+            .scale(scale)
+            .background(if (color == Color.Transparent) Color(0xFF151515) else color)
+            .border(0.5.dp, GoldPrimary.copy(alpha = 0.15f))
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall.copy(color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (isLabel) 10.sp else 14.sp))
         if (betAmount > 0) {
-            Surface(modifier = Modifier.size(24.dp), color = GoldPrimary, shape = CircleShape, border = BorderStroke(1.dp, Color.Black)) {
+            val chipScale by animateFloatAsState(1.1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "ChipScale")
+            Surface(
+                modifier = Modifier.size(24.dp).scale(chipScale), 
+                color = GoldPrimary, 
+                shape = CircleShape, 
+                border = BorderStroke(1.dp, Color.Black)
+            ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(if (betAmount >= 1000) "${betAmount / 1000}k" else betAmount.toString(), style = TextStyle(color = Color.Black, fontSize = 8.sp, fontWeight = FontWeight.Bold))
                 }

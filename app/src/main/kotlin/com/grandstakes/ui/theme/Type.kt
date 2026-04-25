@@ -16,12 +16,12 @@ private val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-private val DMSerifDisplay = FontFamily(
+val DMSerifDisplay = FontFamily(
     Font(googleFont = GoogleFont("DM Serif Display"), fontProvider = provider),
     Font(googleFont = GoogleFont("DM Serif Display"), fontProvider = provider, style = FontStyle.Italic, weight = FontWeight.Normal)
 )
 
-private val Manrope = FontFamily(
+val Manrope = FontFamily(
     Font(googleFont = GoogleFont("Manrope"), fontProvider = provider),
     Font(googleFont = GoogleFont("Manrope"), fontProvider = provider, weight = FontWeight.Bold),
     Font(googleFont = GoogleFont("Manrope"), fontProvider = provider, weight = FontWeight.Light),
