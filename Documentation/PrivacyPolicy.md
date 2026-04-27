@@ -31,7 +31,6 @@ The Application utilizes third-party services that have their own Privacy Polici
 *   [Google Play Services](https://policies.google.com/privacy)
 *   [AdMob](https://support.google.com/admob/answer/6128543?hl=en)
 *   [Google Analytics for Firebase](https://firebase.google.com/policies/analytics)
-*(Elimina o agrega servicios de terceros según los que utilices en tu app, por ejemplo, Unity Ads, Facebook, etc.)*
 
 ## 3. Opt-Out Rights
 
@@ -41,7 +40,7 @@ You can stop all collection of information by the Application easily by uninstal
 
 The Service Provider will retain User Provided data for as long as you use the Application and for a reasonable time thereafter. 
 
-**Data Deletion Request:** If you'd like the Service Provider to delete User Provided Data that you have provided via the Application, please contact them at **[Tu Email de Contacto / Contact Email]** and they will respond in a reasonable time. *(Google Play requiere explícitamente que los usuarios tengan una forma de solicitar la eliminación de sus datos)*.
+**Data Deletion Request:** If you'd like the Service Provider to delete User Provided Data that you have provided via the Application, please contact them at **carlos.baenam.col@upb.edu.co** and they will respond in a reasonable time. *(Google Play requiere explícitamente que los usuarios tengan una forma de solicitar la eliminación de sus datos)*.
 
 ## 5. Children's Privacy
 
@@ -61,4 +60,4 @@ This Privacy Policy may be updated from time to time for any reason. The Service
 ## 8. Contact Us
 
 If you have any questions regarding privacy while using the Application, or have questions about the practices, please contact the Service Provider via email at:
-**[Tu Email de Contacto / Contact Email]**
+**carlos.baenam.col@upb.edu.co**
