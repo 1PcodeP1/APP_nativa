@@ -1,0 +1,62 @@
+[
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_slots_cover.jpg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/slots_cover.jpg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_baccarat_cover.jpg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/baccarat_cover.jpg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.grandstakes.app-main-68:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_nebula_gems_slot.jpg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/nebula_gems_slot.jpg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_eye_of_ra_slot.jpg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/eye_of_ra_slot.jpg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/xml_backup_rules.xml.flat",
+        "source": "com.grandstakes.app-main-68:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_logo.jpeg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/logo.jpeg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/xml_data_extraction_rules.xml.flat",
+        "source": "com.grandstakes.app-main-68:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_blackjack_cover.jpg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/blackjack_cover.jpg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_lobby_hero.jpg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/lobby_hero.jpg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_royal_cherry_slot.jpg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/royal_cherry_slot.jpg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/drawable_roulette_cover.jpg.flat",
+        "source": "com.grandstakes.app-main-68:/drawable/roulette_cover.jpg"
+    },
+    {
+        "merged": "com.grandstakes.app-release-67:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.grandstakes.app-main-68:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    }
+]
