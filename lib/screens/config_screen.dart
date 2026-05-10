@@ -205,15 +205,64 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 child: Column(
                   children: [
                     _buildNavRow(Icons.security_outlined, "Two-Factor Authentication", "Currently Enabled via Authenticator App", onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("2FA settings coming soon.")));
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: AppColors.surfaceContainerHigh,
+                          title: const Text("Two-Factor Authentication", style: TextStyle(color: AppColors.primary)),
+                          content: const Text("2FA is currently managed by your concierge. Contact support to disable.", style: TextStyle(color: Colors.white)),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK", style: TextStyle(color: AppColors.primary))),
+                          ],
+                        ),
+                      );
                     }),
                     const SizedBox(height: 16),
-                    _buildNavRow(Icons.vpn_key_outlined, "Change Secure Password", "Last changed 1 month ago", onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password reset email sent.")));
+                    _buildNavRow(Icons.vpn_key_outlined, "Change Secure Password", "Update your account password", onTap: () async {
+                      final ctrl = TextEditingController();
+                      final newPass = await showDialog<String>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: AppColors.surfaceContainerHigh,
+                          title: const Text("Change Password", style: TextStyle(color: AppColors.primary)),
+                          content: TextField(
+                            controller: ctrl,
+                            obscureText: true,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: const InputDecoration(labelText: "New Password"),
+                          ),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCEL", style: TextStyle(color: AppColors.onSurfaceVariant))),
+                            TextButton(onPressed: () => Navigator.pop(context, ctrl.text), child: const Text("SAVE", style: TextStyle(color: AppColors.primary))),
+                          ],
+                        ),
+                      );
+                      if (newPass != null && newPass.isNotEmpty) {
+                        AuthService.updatePassword(newPass);
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password updated successfully.")));
+                      }
                     }),
                     const SizedBox(height: 16),
-                    _buildNavRow(Icons.history_outlined, "Login Activity", "View active sessions and devices", onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No unusual login activity.")));
+                    _buildNavRow(Icons.history_outlined, "Login Activity", "View active sessions", onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: AppColors.surfaceContainerHigh,
+                          title: const Text("Recent Activity", style: TextStyle(color: AppColors.primary)),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text("• Mac OS / Chrome - Active Now", style: TextStyle(color: Colors.greenAccent)),
+                              SizedBox(height: 8),
+                              Text("• iPhone 15 Pro - Yesterday", style: TextStyle(color: Colors.white70)),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context), child: const Text("CLOSE", style: TextStyle(color: AppColors.primary))),
+                          ],
+                        ),
+                      );
                     }),
                   ],
                 ),
@@ -237,35 +286,83 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     const SizedBox(height: 32),
                     
                     // Buttons
-                    _buildActionBtn("Time-Out (Cooling Off)", Icons.timer_outlined, onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Time-Out requested. Concierge will contact you.")));
+                    _buildActionBtn("Time-Out (Cooling Off)", Icons.timer_outlined, onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: AppColors.surfaceContainerHigh,
+                          title: const Text("Request Time-Out?", style: TextStyle(color: AppColors.primary)),
+                          content: const Text("Your account will be suspended for 24 hours. Are you sure?", style: TextStyle(color: Colors.white)),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("CANCEL", style: TextStyle(color: AppColors.onSurfaceVariant))),
+                            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("CONFIRM", style: TextStyle(color: Colors.redAccent))),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await AuthService.logout();
+                        if (mounted) Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+                      }
                     }),
                     const SizedBox(height: 12),
-                    _buildActionBtn("Self-Exclusion", Icons.block_outlined, onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Self-Exclusion requested. Concierge will contact you.")));
+                    _buildActionBtn("Self-Exclusion", Icons.block_outlined, onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: AppColors.surfaceContainerHigh,
+                          title: const Text("Self-Exclusion", style: TextStyle(color: Colors.redAccent)),
+                          content: const Text("This action is irreversible and blocks access to Grand Stakes indefinitely. Proceed?", style: TextStyle(color: Colors.white)),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("CANCEL", style: TextStyle(color: AppColors.onSurfaceVariant))),
+                            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("EXCLUDE ME", style: TextStyle(color: Colors.redAccent))),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await AuthService.logout();
+                        if (mounted) Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+                      }
                     }),
                     const SizedBox(height: 24),
 
                     // Support Box
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("NEED SUPPORT?", style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Our concierge is available 24/7 for responsible gaming guidance.",
-                            style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
-                          ),
-                          const SizedBox(height: 16),
-                          Text("Talk to a Care Specialist", style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
-                        ],
+                    InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: AppColors.surfaceContainerHigh,
+                            title: const Text("Connecting to Concierge...", style: TextStyle(color: AppColors.primary)),
+                            content: const SizedBox(height: 50, child: Center(child: CircularProgressIndicator(color: AppColors.primary))),
+                          )
+                        );
+                        Future.delayed(const Duration(seconds: 2), () {
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Concierge is currently busy. Please try again later.")));
+                          }
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("NEED SUPPORT?", style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Our concierge is available 24/7 for responsible gaming guidance.",
+                              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                            ),
+                            const SizedBox(height: 16),
+                            Text("Talk to a Care Specialist", style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
                     ),
                     

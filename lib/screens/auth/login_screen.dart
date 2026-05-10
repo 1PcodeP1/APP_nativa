@@ -17,125 +17,168 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _error;
 
-  void _login() async {
-    if (_usernameCtrl.text.isEmpty || _passwordCtrl.text.isEmpty) {
-      setState(() { _error = "Please enter your credentials to continue."; });
+  void _loginAsGuest() async {
+    String user = _usernameCtrl.text.trim();
+    String pass = _passwordCtrl.text.trim();
+    
+    setState(() { _isLoading = true; _error = null; });
+    
+    if (user.isEmpty && pass.isEmpty) {
+      // Guest mode
+      user = "Guest_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}";
+      pass = "1234";
+      await AuthService.register(user, pass, user, '$user@casino.com');
+    } else if (user.isNotEmpty && pass.isEmpty) {
+      setState(() { _isLoading = false; _error = "Password required."; });
+      return;
+    } else if (user.isEmpty && pass.isNotEmpty) {
+      setState(() { _isLoading = false; _error = "Username required."; });
       return;
     }
-    setState(() { _isLoading = true; _error = null; });
-    final success = await AuthService.login(_usernameCtrl.text.trim(), _passwordCtrl.text);
+    
+    // Try to login
+    bool success = await AuthService.login(user, pass);
+    
     if (!mounted) return;
     if (success) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainLayout()));
     } else {
-      setState(() { _isLoading = false; _error = "Invalid credentials. Please try again."; });
+      setState(() { _isLoading = false; _error = "Credenciales incorrectas. Verifica tu identidad."; });
     }
   }
-
-  bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black, // Darkest background
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Text(
-                "GRAND STAKES",
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.primary,
-                  letterSpacing: 2.0,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                Text(
+                  "GRAND STAKES",
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.primary,
+                    letterSpacing: 2.0,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "THE HIGH-ROLLER'S PRIVATE ATELIER",
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  letterSpacing: 4.0,
+                const SizedBox(height: 8),
+                Text(
+                  "THE HIGH-ROLLER'S PRIVATE ATELIER",
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    letterSpacing: 4.0,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    "Welcome to Grand Stakes Simulator. This is a risk-free environment. Play anonymously as a guest or create an identity to track your performance over time.",
+                    style: TextStyle(color: AppColors.primary, fontSize: 12, height: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 48),
 
-              // Main Card
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(4),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ]
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      "Welcome Back",
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
+                // Main Card
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      )
+                    ]
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        "Welcome",
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(_error!, style: const TextStyle(color: AppColors.secondary), textAlign: TextAlign.center),
-                      ),
+                      const SizedBox(height: 32),
+                      
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Text(_error!, style: const TextStyle(color: AppColors.secondary), textAlign: TextAlign.center),
+                        ),
 
-                    // Identity Field
-                    Text("IDENTITY", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                    const SizedBox(height: 8),
-                    _buildInputField(
-                      controller: _usernameCtrl,
-                      hint: "Username or Email",
-                      icon: Icons.alternate_email,
-                      isPassword: false,
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Credential Field
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("CREDENTIAL", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                        Text("FORGOT?", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant, letterSpacing: 1.5)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    _buildInputField(
-                      controller: _passwordCtrl,
-                      hint: "••••••••",
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Login Button
-                    InkWell(
-                      onTap: _isLoading ? null : _login,
-                      borderRadius: BorderRadius.circular(2),
-                      child: Ink(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      // Identity Field
+                      Text("PLAYER CREDENTIALS", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      const SizedBox(height: 8),
+                      Container(
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.surfaceContainerLowest,
                           borderRadius: BorderRadius.circular(2),
                         ),
-                        child: Center(
+                        child: TextField(
+                          controller: _usernameCtrl,
+                          style: const TextStyle(color: AppColors.onSurface),
+                          decoration: InputDecoration(
+                            hintText: "Enter identity (leave blank for Guest)",
+                            hintStyle: TextStyle(color: AppColors.onSurfaceVariant.withValues(alpha: 0.5)),
+                            prefixIcon: const Icon(Icons.person_outline, color: AppColors.onSurfaceVariant, size: 20),
+                            border: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: TextField(
+                          controller: _passwordCtrl,
+                          obscureText: true,
+                          style: const TextStyle(color: AppColors.onSurface),
+                          decoration: InputDecoration(
+                            hintText: "Password",
+                            hintStyle: TextStyle(color: AppColors.onSurfaceVariant.withValues(alpha: 0.5)),
+                            prefixIcon: const Icon(Icons.lock_outline, color: AppColors.onSurfaceVariant, size: 20),
+                            border: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Login Button
+                      SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _loginAsGuest,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+                          ),
                           child: _isLoading 
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
                             : Text(
@@ -148,115 +191,34 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Or Continue Via
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: AppColors.surfaceVariant)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text("OR CONTINUE VIA", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant, letterSpacing: 1.5)),
+                      const SizedBox(height: 24),
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+                          },
+                          child: Text("NO IDENTITY YET? CREATE ONE", style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12, letterSpacing: 1.5, decoration: TextDecoration.underline)),
                         ),
-                        Expanded(child: Divider(color: AppColors.surfaceVariant)),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Social Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSocialBtn("GOOGLE", Icons.g_mobiledata),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildSocialBtn("APPLE", Icons.apple),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 48),
-
-              // Footer Request Invitation
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Not a member of the circle? ", style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
-                    },
-                    child: Text("Request Invitation", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              
-              const SizedBox(height: 48),
-              
-              // Footer Links
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildFooterLink("PRIVACY\nPOLICY"),
-                  _buildFooterLink("HOUSE\nRULES"),
-                  _buildFooterLink("RESPONSIBLE\nGAMING"),
-                ],
-              )
-            ],
+                ),
+                
+                const SizedBox(height: 48),
+                
+                // Footer Links
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildFooterLink("PRIVACY\nPOLICY"),
+                    _buildFooterLink("HOUSE\nRULES"),
+                    _buildFooterLink("RESPONSIBLE\nGAMING"),
+                  ],
+                )
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInputField({required TextEditingController controller, required String hint, required IconData icon, required bool isPassword}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(2),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: isPassword && _obscureText,
-        style: const TextStyle(color: AppColors.onSurface),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: AppColors.onSurfaceVariant.withValues(alpha: 0.5)),
-          prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
-          suffixIcon: isPassword 
-            ? IconButton(
-                icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility, color: AppColors.onSurfaceVariant, size: 20),
-                onPressed: () => setState(() => _obscureText = !_obscureText),
-              ) 
-            : null,
-          border: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialBtn(String text, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(2),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
-          const SizedBox(width: 8),
-          Text(text, style: const TextStyle(color: AppColors.onSurface, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-        ],
       ),
     );
   }

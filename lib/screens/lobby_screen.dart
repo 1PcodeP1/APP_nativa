@@ -35,22 +35,33 @@ class _LobbyScreenState extends State<LobbyScreen> {
           icon: const Icon(Icons.account_circle, color: AppColors.primary, size: 32),
           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfigScreen())),
         ),
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("GRAND STAKES", style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary, fontStyle: FontStyle.italic, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.5))),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                "GRAND STAKES",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.primary, 
+                  fontStyle: FontStyle.italic, 
+                  fontWeight: FontWeight.bold
                 ),
-                child: Text("\$$_balance", style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary)),
-              )
-            ],
-          ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.5))),
+              ),
+              child: Text(
+                "\$$_balance",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         actions: [
@@ -98,18 +109,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 children: [
                   Text("The High-Roller's\nPrivate Atelier", style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 48, height: 1.1)),
                   const SizedBox(height: 16),
-                  InkWell(
-                    onTap: () {},
-                    child: Ink(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        border: Border.all(color: AppColors.primary),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: const Text("REQUEST INVITATION", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 10)),
-                    ),
-                  ),
+
                 ],
               ),
             ),

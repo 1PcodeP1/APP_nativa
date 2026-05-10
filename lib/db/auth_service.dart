@@ -39,7 +39,10 @@ class AuthService {
     if (userData == null) {
       for (var key in _users.keys) {
         final userMap = _users.get(key);
-        if (userMap != null && userMap['email'] == identifier) {
+        if (userMap != null && (
+            (userMap['email'] as String).toLowerCase() == identifier.toLowerCase() || 
+            (userMap['name'] as String).toLowerCase() == identifier.toLowerCase()
+        )) {
           userData = userMap;
           usernameKey = key;
           break;
@@ -87,6 +90,17 @@ class AuthService {
       final userData = Map<String, dynamic>.from(_users.get(user) ?? {});
       if (userData.isNotEmpty) {
         userData['name'] = newName;
+        await _users.put(user, userData);
+      }
+    }
+  }
+
+  static Future<void> updatePassword(String newPassword) async {
+    final user = currentUser;
+    if (user != null) {
+      final userData = Map<String, dynamic>.from(_users.get(user) ?? {});
+      if (userData.isNotEmpty) {
+        userData['password'] = newPassword;
         await _users.put(user, userData);
       }
     }

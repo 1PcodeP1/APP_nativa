@@ -5,6 +5,7 @@ import '../db/auth_service.dart';
 import 'config_screen.dart';
 import 'auth/login_screen.dart';
 import 'transactions_screen.dart';
+import '../services/sound_service.dart';
 
 // Standard European Roulette Sequence
 const List<int> rouletteSequence = [
@@ -14,7 +15,7 @@ const List<int> rouletteSequence = [
 
 // Logic export for testing
 Color getRouletteColor(int number) {
-  if (number == 0) return AppColors.tertiary;
+  if (number == 0) return Colors.green.shade700;
   const redNumbers = {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36};
   return redNumbers.contains(number) ? AppColors.secondaryContainer : Colors.black;
 }
@@ -43,6 +44,7 @@ class _RouletteScreenState extends State<RouletteScreen> with SingleTickerProvid
 
   double _wheelAngle = 0;
   double _ballAngle = 0;
+  int _lastWinAmount = 0;
 
   final List<int> _chips = [1, 5, 10, 25, 100];
 
@@ -67,6 +69,7 @@ class _RouletteScreenState extends State<RouletteScreen> with SingleTickerProvid
     if (_isSpinning) return;
     if (_balance < _selectedChip) return;
 
+    SoundService.playClick();
     AuthService.updateBalance(-_selectedChip);
     setState(() {
       _balance = AuthService.currentBalance;
@@ -116,9 +119,13 @@ class _RouletteScreenState extends State<RouletteScreen> with SingleTickerProvid
 
     _ballRadiusAnimation = TweenSequence([
       TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeIn)), weight: 70),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.bounceOut)), 
+        weight: 70,
+      ),
     ]).animate(_spinCtrl);
 
+    SoundService.playLuckyWheelSpin();
     await _spinCtrl.forward(from: 0);
     
     if (!mounted) return;
@@ -152,10 +159,12 @@ class _RouletteScreenState extends State<RouletteScreen> with SingleTickerProvid
     });
 
     if (totalWin > 0) {
+      SoundService.playWin();
       AuthService.updateBalance(totalWin, gameName: 'Roulette Win');
     }
 
     setState(() {
+      _lastWinAmount = totalWin;
       _winningNumber = resultNumber;
       _balance = AuthService.currentBalance;
       _placedBets.clear();
@@ -216,36 +225,59 @@ class _RouletteScreenState extends State<RouletteScreen> with SingleTickerProvid
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  SizedBox(
-                    width: 280,
-                    height: 280,
-                    child: AnimatedBuilder(
-                      animation: _spinCtrl,
-                      builder: (context, child) {
-                        return CustomPaint(
-                          painter: RouletteWheelPainter(
-                            _wheelAnimation?.value ?? _wheelAngle,
-                            _ballAnimation?.value ?? _ballAngle,
-                            _ballRadiusAnimation?.value ?? 0.0,
-                          ),
-                        );
-                      }
+                  FittedBox(
+                    fit: BoxFit.contain,
+                    child: SizedBox(
+                      width: 320,
+                      height: 320,
+                      child: AnimatedBuilder(
+                        animation: _spinCtrl,
+                        builder: (context, child) {
+                          return Transform(
+                            transform: Matrix4.identity(), // Ruleta completamente plana
+                            alignment: Alignment.center,
+                            child: CustomPaint(
+                              painter: RouletteWheelPainter(
+                                _wheelAnimation?.value ?? _wheelAngle,
+                                _ballAnimation?.value ?? _ballAngle,
+                                _ballRadiusAnimation?.value ?? 0.0,
+                              ),
+                            ),
+                          );
+                        }
+                      ),
                     ),
                   ),
                   if (_winningNumber != null && !_isSpinning)
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       decoration: BoxDecoration(
-                        color: AppColors.surface.withOpacity(0.9),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.primary, width: 2),
+                        color: getRouletteColor(_winningNumber!),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primary, width: 3),
+                        boxShadow: [BoxShadow(color: getRouletteColor(_winningNumber!).withValues(alpha: 0.8), blurRadius: 30)],
                       ),
-                      child: Text(
-                        _winningNumber.toString(),
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: getRouletteColor(_winningNumber!),
+                      child: AnimatedScale(
+                        scale: _winningNumber != null ? 1.1 : 1.0,
+                        duration: const Duration(milliseconds: 600),
+                        curve: Curves.elasticOut,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _winningNumber.toString(),
+                              style: const TextStyle(
+                                fontSize: 72,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          if (_lastWinAmount > 0)
+                            Text(
+                              "+\$$_lastWinAmount",
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 2),
+                            ),
+                          ],
                         ),
                       ),
                     )
@@ -257,15 +289,15 @@ class _RouletteScreenState extends State<RouletteScreen> with SingleTickerProvid
           // Middle Section: Betting Grid
           Expanded(
             flex: 5,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: FittedBox(
+                fit: BoxFit.contain,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildHistory(),
+                    const SizedBox(height: 16),
                     _buildBettingGrid(),
                   ],
                 ),
@@ -556,13 +588,13 @@ class RouletteWheelPainter extends CustomPainter {
       // Draw number text
       canvas.save();
       canvas.rotate(i * segmentAngle);
-      canvas.translate(radius * 0.72, 0);
-      canvas.rotate(pi / 2); // Orient text
+      canvas.translate(radius * 0.76, 0); // Empujarlo más al borde
+      canvas.rotate(pi / 2); // Rotar para que la base del texto apunte al centro
       
       TextPainter tp = TextPainter(
         text: TextSpan(
           text: num.toString(), 
-          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)
+          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)
         ),
         textDirection: TextDirection.ltr,
       );
@@ -572,9 +604,9 @@ class RouletteWheelPainter extends CustomPainter {
     }
     
     // Draw inner metallic center
-    canvas.drawCircle(Offset.zero, radius * 0.55, Paint()..color = const Color(0xFF2C2C2C));
-    canvas.drawCircle(Offset.zero, radius * 0.53, Paint()..color = AppColors.primaryContainer);
-    canvas.drawCircle(Offset.zero, radius * 0.45, Paint()..color = const Color(0xFF3C3C3C));
+    canvas.drawCircle(Offset.zero, radius * 0.60, Paint()..color = const Color(0xFF2C2C2C));
+    canvas.drawCircle(Offset.zero, radius * 0.58, Paint()..color = AppColors.primaryContainer);
+    canvas.drawCircle(Offset.zero, radius * 0.45, Paint()..color = const Color(0xFF1A1A1A));
     // Draw center cone
     canvas.drawCircle(Offset.zero, radius * 0.15, Paint()..color = AppColors.primary);
 

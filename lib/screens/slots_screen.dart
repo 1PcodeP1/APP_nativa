@@ -5,6 +5,7 @@ import 'slot_game_screen.dart';
 import 'config_screen.dart';
 import 'auth/login_screen.dart';
 import 'transactions_screen.dart';
+import 'package:video_player/video_player.dart';
 
 class SlotsScreen extends StatefulWidget {
   const SlotsScreen({Key? key}) : super(key: key);
@@ -33,22 +34,33 @@ class _SlotsScreenState extends State<SlotsScreen> {
           icon: const Icon(Icons.account_circle, color: AppColors.primary, size: 32),
           onPressed: () => Navigator.pushNamed(context, '/profile'),
         ),
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("GRAND STAKES", style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary, fontStyle: FontStyle.italic, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.5))),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                "GRAND STAKES",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.primary, 
+                  fontStyle: FontStyle.italic, 
+                  fontWeight: FontWeight.bold
                 ),
-                child: Text("\$$_balance", style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary)),
-              )
-            ],
-          ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.5))),
+              ),
+              child: Text(
+                "\$$_balance",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         actions: [
@@ -161,6 +173,12 @@ class _SlotsScreenState extends State<SlotsScreen> {
                     buttonColor: Colors.black,
                     textColor: AppColors.primary,
                     hasBorder: true,
+                    onTapOverride: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => const _VideoEasterEggDialog(),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -190,22 +208,21 @@ class _SlotsScreenState extends State<SlotsScreen> {
             const SizedBox(height: 8),
             Text("\$1,420,000", style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 48, fontWeight: FontWeight.w300)),
             const SizedBox(height: 16),
-            InkWell(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SlotGameScreen(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+              ),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SlotGameScreen(
                 theme: SlotTheme(
                   title: "Grand Pit",
                   symbols: ["💰", "💎", "7️⃣", "🔔", "🌟"],
                   primaryColor: AppColors.primary,
                 )
               ))),
-              child: Ink(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: const Text("ENTER THE PIT", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
-              ),
+              child: const Text("ENTER THE PIT", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
             ),
           ],
         ),
@@ -222,6 +239,7 @@ class _SlotsScreenState extends State<SlotsScreen> {
     bool hasBorder = false,
     String? imagePath,
     SlotTheme? theme,
+    VoidCallback? onTapOverride,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -260,7 +278,7 @@ class _SlotsScreenState extends State<SlotsScreen> {
                 Text(subtitle, style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
                 const SizedBox(height: 16),
                 InkWell(
-                  onTap: () {
+                  onTap: onTapOverride ?? () {
                     if (theme != null) {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => SlotGameScreen(theme: theme)));
                     } else {
@@ -285,6 +303,70 @@ class _SlotsScreenState extends State<SlotsScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VideoEasterEggDialog extends StatefulWidget {
+  const _VideoEasterEggDialog({Key? key}) : super(key: key);
+
+  @override
+  State<_VideoEasterEggDialog> createState() => _VideoEasterEggDialogState();
+}
+
+class _VideoEasterEggDialogState extends State<_VideoEasterEggDialog> {
+  late VideoPlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.asset('assets/images/gato_riendo.mp4')
+      ..initialize().then((_) {
+        _controller.setLooping(true);
+        _controller.play();
+        setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              "¿Creíste que había algo aquí?",
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (_controller.value.isInitialized)
+            AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: VideoPlayer(_controller),
+            )
+          else
+            const Padding(
+              padding: EdgeInsets.all(48.0),
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("CERRAR", style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );

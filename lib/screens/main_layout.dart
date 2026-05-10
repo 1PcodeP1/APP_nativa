@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'lobby_screen.dart';
-import 'roulette_screen.dart'; // Maybe replace with a generic tables screen later, for now Roulette
-import 'slots_screen.dart';
-import 'promos_screen.dart';
+import 'slots_screen.dart'; // Este será nuestro tab de "JUEGO" simulador
+import 'score_screen.dart';
+import 'credits_screen.dart';
+import '../services/sound_service.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
@@ -14,12 +15,24 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    SoundService.playBackgroundJazz();
+  }
+
+  @override
+  void dispose() {
+    SoundService.stopBackgroundJazz();
+    super.dispose();
+  }
   
   final List<Widget> _screens = [
     const LobbyScreen(),
-    const RouletteScreen(), // TODO: Change to a generic Tables screen if needed
     const SlotsScreen(),
-    const PromosScreen(),
+    const ScoreScreen(),
+    const CreditsScreen(),
   ];
 
   @override
@@ -45,24 +58,24 @@ class _MainLayoutState extends State<MainLayout> {
           },
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.casino_outlined),
-              activeIcon: Icon(Icons.casino),
-              label: 'LOBBY',
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'HOME',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.style_outlined),
-              activeIcon: Icon(Icons.style),
-              label: 'TABLES',
+              icon: Icon(Icons.videogame_asset_outlined),
+              activeIcon: Icon(Icons.videogame_asset),
+              label: 'JUEGO',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.view_comfy_alt_outlined),
-              activeIcon: Icon(Icons.view_comfy_alt),
-              label: 'SLOTS',
+              icon: Icon(Icons.leaderboard_outlined),
+              activeIcon: Icon(Icons.leaderboard),
+              label: 'PUNTAJE',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.emoji_events_outlined),
-              activeIcon: Icon(Icons.emoji_events),
-              label: 'PROMOS',
+              icon: Icon(Icons.info_outline),
+              activeIcon: Icon(Icons.info),
+              label: 'CRÉDITOS',
             ),
           ],
           selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
@@ -72,3 +85,4 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 }
+

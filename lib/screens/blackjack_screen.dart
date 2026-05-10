@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../logic/card_deck.dart';
 import '../db/auth_service.dart';
+import '../services/sound_service.dart';
 import 'config_screen.dart';
 import 'auth/login_screen.dart';
 import 'transactions_screen.dart';
@@ -16,6 +17,7 @@ class BlackjackScreen extends StatefulWidget {
 class _BlackjackScreenState extends State<BlackjackScreen> {
   final Deck _deck = Deck();
   List<PlayingCard> _playerH = [];
+  List<PlayingCard> _splitH = []; // New split hand
   List<PlayingCard> _dealerH = [];
   
   bool _isPlaying = false;
@@ -23,7 +25,10 @@ class _BlackjackScreenState extends State<BlackjackScreen> {
   String _message = "Place your bet.";
   int _betAmount = 100;
   int _activeBet = 0;
+  int _splitBet = 0; // Bet for split hand
   int _balance = 0;
+  
+  int _activeHand = 1; // 1 or 2
 
   @override
   void initState() {
@@ -56,12 +61,17 @@ class _BlackjackScreenState extends State<BlackjackScreen> {
       return;
     }
     _updateBal(-_betAmount);
+    SoundService.playClick();
+    SoundService.playCardDraw();
     setState(() {
       _activeBet = _betAmount;
+      _splitBet = 0;
       _playerH = [_deck.draw(), _deck.draw()];
+      _splitH = [];
       _dealerH = [_deck.draw(), _deck.draw()];
       _isPlaying = true;
       _gameOver = false;
+      _activeHand = 1;
       _message = "";
       if (_calcHand(_playerH) == 21) {
         _endGame();
@@ -70,7 +80,7 @@ class _BlackjackScreenState extends State<BlackjackScreen> {
   }
 
   void _fold() { // Surrender
-    if (_playerH.length == 2 && !_gameOver) {
+    if (_playerH.length == 2 && !_gameOver && _splitH.isEmpty) {
       setState(() {
         _message = "SURRENDER. RETURN HALF BET.";
         _updateBal((_activeBet / 2).toInt());
@@ -81,17 +91,21 @@ class _BlackjackScreenState extends State<BlackjackScreen> {
   }
 
   void _doubleDown() {
-    if (_playerH.length == 2 && !_gameOver) {
-      if (_balance >= _activeBet) {
-        _updateBal(-_activeBet);
-        _activeBet *= 2;
+    if ((_activeHand == 1 ? _playerH.length : _splitH.length) == 2 && !_gameOver) {
+      if (_balance >= (_activeHand == 1 ? _activeBet : _splitBet)) {
+        int bet = _activeHand == 1 ? _activeBet : _splitBet;
+        _updateBal(-bet);
+        if (_activeHand == 1) _activeBet *= 2; else _splitBet *= 2;
+        SoundService.playCardDraw();
         setState(() {
-          _playerH.add(_deck.draw());
-          if (_calcHand(_playerH) > 21) {
-            _message = "BUST! YOU LOSE.";
-            _endGame();
+          if (_activeHand == 1) {
+             _playerH.add(_deck.draw());
+             if (_calcHand(_playerH) > 21) {
+               if (_splitH.isEmpty) { _message = "BUST! YOU LOSE."; _endGame(); } else { _stand(); }
+             } else { _stand(); }
           } else {
-            _stand();
+             _splitH.add(_deck.draw());
+             _stand();
           }
         });
       } else {
@@ -101,48 +115,127 @@ class _BlackjackScreenState extends State<BlackjackScreen> {
   }
 
   void _split() {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Split functionality coming in next update.", style: TextStyle(color: Colors.white))));
+    if (_playerH.length == 2 && _splitH.isEmpty && _playerH[0].blackjackValue == _playerH[1].blackjackValue) {
+      if (_balance >= _activeBet) {
+        _updateBal(-_activeBet);
+        SoundService.playCardDraw();
+        setState(() {
+          _splitBet = _activeBet;
+          _splitH = [_playerH.removeLast(), _deck.draw()];
+          _playerH.add(_deck.draw());
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Not enough funds to Split.", style: TextStyle(color: Colors.white)), backgroundColor: Colors.red));
+      }
+    }
   }
 
   void _hit() {
+    SoundService.playCardDraw();
     setState(() {
-      _playerH.add(_deck.draw());
-      if (_calcHand(_playerH) > 21) {
-        _message = "BUST! YOU LOSE.";
-        _endGame();
+      if (_activeHand == 1) {
+        _playerH.add(_deck.draw());
+        if (_calcHand(_playerH) > 21) {
+           if (_splitH.isNotEmpty) {
+             _activeHand = 2; // Move to hand 2
+           } else {
+             _message = "BUST! YOU LOSE.";
+             _endGame();
+           }
+        }
+      } else {
+        _splitH.add(_deck.draw());
+        if (_calcHand(_splitH) > 21) {
+           _stand();
+        }
       }
     });
   }
 
   void _stand() {
     setState(() {
-      while (_calcHand(_dealerH) < 17) {
-        _dealerH.add(_deck.draw());
+      if (_splitH.isNotEmpty && _activeHand == 1) {
+        _activeHand = 2; // Move to second hand
+      } else {
+        while (_calcHand(_dealerH) < 17) {
+          _dealerH.add(_deck.draw());
+        }
+        _endGame();
       }
-      _endGame();
     });
   }
 
   void _endGame() {
     _gameOver = true;
     _isPlaying = false;
-    int pV = _calcHand(_playerH);
+    
     int dV = _calcHand(_dealerH);
-
+    int pV = _calcHand(_playerH);
+    
+    // Evaluate Hand 1
+    String res1 = "";
     if (pV <= 21) {
-      if (pV == 21 && _playerH.length == 2 && !(dV == 21 && _dealerH.length == 2)) {
-        _message = "BLACKJACK! YOU WIN 3:2";
+      if (pV == 21 && _playerH.length == 2 && !(dV == 21 && _dealerH.length == 2) && _splitH.isEmpty) {
+        res1 = "BLACKJACK! (3:2)";
+        SoundService.playWin();
         _updateBal((_activeBet * 2.5).toInt());
       } else if (dV > 21 || pV > dV) {
-        _message = "YOU WIN!";
+        res1 = "WIN";
+        SoundService.playWin();
         _updateBal(_activeBet * 2);
       } else if (pV < dV) {
-        _message = "DEALER WINS.";
+        res1 = "LOSE";
       } else {
-        _message = "PUSH (TIE).";
+        res1 = "PUSH";
         _updateBal(_activeBet);
       }
+    } else {
+      res1 = "BUST";
     }
+
+    // Evaluate Hand 2 (if exists)
+    if (_splitH.isNotEmpty) {
+      int sV = _calcHand(_splitH);
+      String res2 = "";
+      if (sV <= 21) {
+         if (dV > 21 || sV > dV) {
+            res2 = "WIN";
+            SoundService.playWin();
+            _updateBal(_splitBet * 2);
+         } else if (sV < dV) {
+            res2 = "LOSE";
+         } else {
+            res2 = "PUSH";
+            _updateBal(_splitBet);
+         }
+      } else {
+        res2 = "BUST";
+      }
+      _message = "H1: $res1 | H2: $res2";
+    } else {
+      _message = res1 == "WIN" ? "YOU WIN! +\$${_activeBet * 2}" : res1 == "LOSE" ? "DEALER WINS." : res1 == "PUSH" ? "PUSH (TIE)." : res1 == "BUST" ? "BUST! YOU LOSE." : res1;
+    }
+  }
+
+  Widget _buildChip(int amount) {
+    return InkWell(
+      onTap: () {
+        if (_betAmount + amount <= _balance) {
+          SoundService.playClick();
+          setState(() => _betAmount += amount);
+        }
+      },
+      child: Container(
+        width: 50, height: 50,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.surfaceContainerHigh,
+          border: Border.all(color: AppColors.primary, width: 2),
+        ),
+        alignment: Alignment.center,
+        child: Text("\$$amount", style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+      ),
+    );
   }
 
   Widget _buildActionButton(String label, VoidCallback? onPressed, {bool isPrimary = false}) {
@@ -284,7 +377,25 @@ class _BlackjackScreenState extends State<BlackjackScreen> {
                 const Spacer(),
                 
                 // Player Area
-                if (_playerH.isNotEmpty)
+                if (_splitH.isNotEmpty) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Hand 1
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(border: Border.all(color: _activeHand == 1 ? AppColors.primary : Colors.transparent, width: 2), borderRadius: BorderRadius.circular(12)),
+                        child: Row(children: _playerH.map((c) => Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: _PlayingCardMockup(card: c))).toList()),
+                      ),
+                      // Hand 2
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(border: Border.all(color: _activeHand == 2 ? AppColors.primary : Colors.transparent, width: 2), borderRadius: BorderRadius.circular(12)),
+                        child: Row(children: _splitH.map((c) => Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: _PlayingCardMockup(card: c))).toList()),
+                      ),
+                    ],
+                  )
+                ] else if (_playerH.isNotEmpty) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: _playerH.map((c) => Padding(
@@ -292,11 +403,23 @@ class _BlackjackScreenState extends State<BlackjackScreen> {
                       child: _PlayingCardMockup(card: c),
                     )).toList(),
                   ),
+                ],
                 
                 const SizedBox(height: 16),
                 
                 if (_message.isNotEmpty)
-                  Text(_message, style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.primary)),
+                  AnimatedScale(
+                    scale: _message.contains("WIN") || _message.contains("BLACKJACK") ? 1.2 : 1.0,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.elasticOut,
+                    child: Text(
+                      _message,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: _message.contains("WIN") || _message.contains("BLACKJACK") ? Colors.amber : AppColors.primary,
+                        shadows: _message.contains("WIN") || _message.contains("BLACKJACK") ? [const Shadow(color: Colors.amberAccent, blurRadius: 10)] : [],
+                      ),
+                    ),
+                  ),
                 
                 const SizedBox(height: 24),
                 
@@ -305,19 +428,21 @@ class _BlackjackScreenState extends State<BlackjackScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline, color: AppColors.primary),
-                        onPressed: () {
-                          if (_betAmount > 10) setState(() => _betAmount -= 10);
-                        },
-                      ),
-                      Text("\$$_betAmount", style: Theme.of(context).textTheme.headlineMedium),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-                        onPressed: () {
-                          if (_betAmount + 10 <= _balance) setState(() => _betAmount += 10);
-                        },
-                      ),
+                      _buildChip(10),
+                      const SizedBox(width: 8),
+                      _buildChip(50),
+                      const SizedBox(width: 8),
+                      _buildChip(100),
+                      const SizedBox(width: 8),
+                      _buildChip(500),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(icon: const Icon(Icons.clear, color: Colors.red), onPressed: () => setState(()=> _betAmount = 10)),
+                      Text("TOTAL BET: \$$_betAmount", style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppColors.primary)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -377,8 +502,8 @@ class _PlayingCardMockupState extends State<_PlayingCardMockup> with SingleTicke
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
-    _slideAnim = Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _slideAnim = Tween<Offset>(begin: const Offset(0, -6), end: Offset.zero).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack)); // Salto de la carta con 3D
     _ctrl.forward();
   }
 
@@ -390,66 +515,83 @@ class _PlayingCardMockupState extends State<_PlayingCardMockup> with SingleTicke
 
   @override
   Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _slideAnim,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, child) {
+          return Transform(
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.001)
+              ..rotateX((1.0 - _ctrl.value) * 1.5) // Voltea la carta en 3D mientras cae
+              ..rotateZ(((widget.card?.hashCode ?? 0) % 10 - 5) * 0.01), // Ligera inclinación natural
+            alignment: Alignment.center,
+            child: child,
+          );
+        },
+        child: _buildCard(),
+      ),
+    );
+  }
+  
+  Widget _buildCard() {
     if (widget.isHidden || widget.card == null) {
-      return SlideTransition(
-        position: _slideAnim,
-        child: Container(
-          width: 80,
-          height: 110,
-          decoration: BoxDecoration(
-            color: const Color(0xFF382A2A), // Dark brown back
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
-            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))],
-          ),
-          alignment: Alignment.center,
-          child: const Icon(Icons.diamond_outlined, color: AppColors.primary, size: 32),
+      return Container(
+        width: 80,
+        height: 110,
+        decoration: BoxDecoration(
+          color: const Color(0xFF382A2A), // Dark brown back
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
+          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))],
         ),
+        alignment: Alignment.center,
+        child: const Icon(Icons.diamond_outlined, color: AppColors.primary, size: 32),
       );
     }
     
-    return SlideTransition(
-      position: _slideAnim,
-      child: Transform.rotate(
-        angle: (widget.card.hashCode % 10 - 5) * 0.01, // Slight random rotation
-        child: Container(
-          width: 80,
-          height: 110,
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAEAEA),
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))],
+    return Container(
+      width: 80,
+      height: 110,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAEAEA),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))],
+      ),
+      padding: const EdgeInsets.all(6),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0, left: 0,
+            child: Column(
+              children: [
+                Text(widget.card!.label, style: TextStyle(color: widget.card!.isRed ? const Color(0xFFD32F2F) : Colors.black87, fontSize: 18, fontWeight: FontWeight.w900)),
+                Text(widget.card!.suitSymbol, style: TextStyle(color: widget.card!.isRed ? const Color(0xFFFFCDD2) : Colors.black38, fontSize: 12)),
+              ],
+            ),
           ),
-          padding: const EdgeInsets.all(6),
-          child: Stack(
-            children: [
-              Positioned(
-                top: 0, left: 0,
-                child: Column(
-                  children: [
-                    Text(widget.card!.label, style: TextStyle(color: widget.card!.isRed ? const Color(0xFFD32F2F) : Colors.black87, fontSize: 18, fontWeight: FontWeight.w900)),
-                    Text(widget.card!.suitSymbol, style: TextStyle(color: widget.card!.isRed ? const Color(0xFFFFCDD2) : Colors.black38, fontSize: 12)),
-                  ],
-                ),
-              ),
-              const Center(
-                child: Icon(Icons.swipe_outlined, color: Colors.black87, size: 28),
-              ),
-              Positioned(
-                bottom: 0, right: 0,
-                child: RotatedBox(
-                  quarterTurns: 2,
-                  child: Column(
-                    children: [
-                      Text(widget.card!.label, style: TextStyle(color: widget.card!.isRed ? const Color(0xFFD32F2F) : Colors.black87, fontSize: 18, fontWeight: FontWeight.w900)),
-                      Text(widget.card!.suitSymbol, style: TextStyle(color: widget.card!.isRed ? const Color(0xFFFFCDD2) : Colors.black38, fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          Center(
+            child: Text(
+              widget.card!.suitSymbol, 
+              style: TextStyle(
+                color: widget.card!.isRed ? const Color(0xFFD32F2F).withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.1), 
+                fontSize: 60
+              )
+            ),
           ),
-        ),
+          Positioned(
+            bottom: 0, right: 0,
+            child: RotatedBox(
+              quarterTurns: 2,
+              child: Column(
+                children: [
+                  Text(widget.card!.label, style: TextStyle(color: widget.card!.isRed ? const Color(0xFFD32F2F) : Colors.black87, fontSize: 18, fontWeight: FontWeight.w900)),
+                  Text(widget.card!.suitSymbol, style: TextStyle(color: widget.card!.isRed ? const Color(0xFFFFCDD2) : Colors.black38, fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

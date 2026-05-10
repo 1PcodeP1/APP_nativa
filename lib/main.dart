@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/main_layout.dart';
-import 'screens/auth/login_screen.dart';
+import 'screens/splash_screen.dart';
 import 'theme.dart';
 import 'db/auth_service.dart';
 
@@ -16,10 +15,11 @@ class GrandStakesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Grand Stakes',
+      title: 'Grand Stakes Pro Sim',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
-      home: AuthService.isLoggedIn ? const MainLayout() : const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }
+
