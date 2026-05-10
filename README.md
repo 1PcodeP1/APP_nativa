@@ -29,8 +29,8 @@
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Flutter SDK (latest stable version recommended)
-- Dart SDK
+  - Flutter SDK (latest stable version recommended)
+  - Dart SDK
 
 ### Installation
 
